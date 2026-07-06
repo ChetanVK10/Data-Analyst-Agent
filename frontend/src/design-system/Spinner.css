@@ -1,0 +1,43 @@
+/* ================================================================
+   SPINNER & THINKING DOTS — Design System
+   ================================================================ */
+
+.ds-spinner {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.ds-spinner__ring {
+  border: 2.5px solid var(--color-border);
+  border-top-color: var(--color-accent);
+  border-radius: var(--radius-full);
+  animation: ds-spin 0.8s linear infinite;
+}
+
+.ds-spinner--sm .ds-spinner__ring { width: 16px; height: 16px; border-width: 2px; }
+.ds-spinner--md .ds-spinner__ring { width: 24px; height: 24px; }
+.ds-spinner--lg .ds-spinner__ring { width: 36px; height: 36px; border-width: 3px; }
+
+.ds-spinner__label {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+
+/* ── Thinking Dots ── */
+.ds-thinking {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 0;
+}
+
+.ds-thinking__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--color-accent);
+  animation: ds-bounce 1.2s ease-in-out infinite;
+}

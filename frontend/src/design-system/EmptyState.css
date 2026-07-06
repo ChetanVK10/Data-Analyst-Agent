@@ -1,0 +1,46 @@
+/* ================================================================
+   EMPTY STATE — Design System
+   ================================================================ */
+
+.ds-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: var(--space-12) var(--space-8);
+  gap: var(--space-3);
+}
+
+.ds-empty__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-2);
+}
+.ds-empty__icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.ds-empty__title {
+  font-size: var(--text-md);
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.ds-empty__desc {
+  font-size: var(--text-base);
+  color: var(--color-text-muted);
+  max-width: 320px;
+  line-height: var(--leading-relaxed);
+}
+
+.ds-empty__action {
+  margin-top: var(--space-4);
+}

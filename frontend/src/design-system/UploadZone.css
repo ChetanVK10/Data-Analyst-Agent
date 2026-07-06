@@ -1,0 +1,96 @@
+/* ================================================================
+   UPLOAD ZONE — Design System
+   ================================================================ */
+
+.ds-upload-zone-wrapper {
+  width: 100%;
+}
+
+.ds-upload-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  padding: var(--space-12) var(--space-8);
+  border: 1.5px dashed var(--color-border);
+  border-radius: var(--radius-xl);
+  background: transparent;
+  cursor: pointer;
+  transition:
+    border-color var(--transition-base),
+    background var(--transition-base),
+    box-shadow var(--transition-slow);
+  outline: none;
+}
+
+.ds-upload-zone:hover:not(.ds-upload-zone--disabled):not(.ds-upload-zone--loading) {
+  border-color: var(--color-accent);
+  background: var(--color-accent-glow);
+}
+
+.ds-upload-zone--drag {
+  border-color: var(--color-accent) !important;
+  background: rgba(139, 92, 246, 0.06) !important;
+  box-shadow: var(--shadow-glow);
+}
+
+.ds-upload-zone--loading {
+  cursor: wait;
+  border-color: var(--color-accent);
+  background: var(--color-accent-glow);
+}
+
+.ds-upload-zone--disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.ds-upload-zone:focus-visible {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px var(--color-accent-glow);
+}
+
+/* ── Icon ── */
+.ds-upload-zone__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  background: var(--color-accent-muted);
+  color: var(--color-accent);
+}
+
+.ds-upload-zone__spinner {
+  animation: ds-spin 0.9s linear infinite;
+}
+
+/* ── Text ── */
+.ds-upload-zone__text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  text-align: center;
+}
+
+.ds-upload-zone__primary {
+  font-size: var(--text-md);
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.ds-upload-zone__hint {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+/* ── Error ── */
+.ds-upload-zone__error {
+  font-size: var(--text-sm);
+  color: var(--color-error);
+  margin-top: var(--space-2);
+  text-align: center;
+}

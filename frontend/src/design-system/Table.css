@@ -1,0 +1,83 @@
+/* ================================================================
+   TABLE — Design System
+   ================================================================ */
+
+.ds-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.ds-table {
+  width: 100%;
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+/* ── Head ── */
+.ds-table__head {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-base);
+}
+
+.ds-table__th {
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  background: var(--color-card);
+  border-bottom: 1px solid var(--color-border);
+  white-space: nowrap;
+}
+
+.ds-table__th--left   { text-align: left; }
+.ds-table__th--center { text-align: center; }
+.ds-table__th--right  { text-align: right; }
+
+
+/* ── Body ── */
+.ds-table__td {
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-base);
+  color: var(--color-text-secondary);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  white-space: nowrap;
+}
+
+.ds-table__td--left   { text-align: left; }
+.ds-table__td--center { text-align: center; }
+.ds-table__td--right  { text-align: right; }
+
+.ds-table__td--mono {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+}
+
+.ds-table__td--muted {
+  color: var(--color-text-muted);
+}
+
+
+/* ── Row Hover ── */
+.ds-table__row--hoverable:hover .ds-table__td {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+
+/* ── Compact ── */
+.ds-table--compact .ds-table__th {
+  padding: var(--space-2) var(--space-3);
+}
+.ds-table--compact .ds-table__td {
+  padding: var(--space-2) var(--space-3);
+}
+
+/* ── Last row no border ── */
+.ds-table__body tr:last-child .ds-table__td {
+  border-bottom: none;
+}
