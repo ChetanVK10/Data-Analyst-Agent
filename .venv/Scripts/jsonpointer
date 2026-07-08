@@ -1,4 +1,4 @@
-#!D:\autonomous-data-analyst-agent\.venv\Scripts\python.exe
+#!D:\Projects\autonomous-data-analyst-agent\.venv\Scripts\python.exe
 
 
 import argparse

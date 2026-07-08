@@ -3,11 +3,17 @@ from dotenv import load_dotenv
 from langchain_groq import ChatGroq
 
 # Load environment variables
-load_dotenv()
+load_dotenv(override=True)
 
 # API Keys
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/postgres")
+DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    raise RuntimeError(
+        "DATABASE_URL environment variable is missing or empty. "
+        "Please ensure it is defined in your `.env` file in the project root directory, "
+        "e.g. DATABASE_URL=postgresql://user:password@localhost:5432/autonomous_data_analyst"
+    )
 
 # Sandbox limits
 SANDBOX_TIMEOUT_SECONDS = int(os.getenv("SANDBOX_TIMEOUT_SECONDS", "10"))

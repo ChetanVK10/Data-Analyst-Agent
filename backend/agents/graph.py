@@ -106,8 +106,16 @@ def create_agent_graph(pool) -> Any:
     
     # Configure Checkpointer
     logger.info("Setting up LangGraph PostgresSaver checkpointer...")
+    from langgraph.checkpoint.base import JsonPlusSerializer
+    from backend.agents.schemas import ConfidenceLevel, ChartType
+    
+    # Configure strict serializer allowlist using public builder methods
+    serde = JsonPlusSerializer(allowed_msgpack_modules=None).with_msgpack_allowlist(
+        [ConfidenceLevel, ChartType]
+    )
+    
     # Initialize checkpointer and run setup DDL to create tables if they do not exist
-    checkpointer = PostgresSaver(pool)
+    checkpointer = PostgresSaver(pool, serde=serde)
     checkpointer.setup()
     
     # Compile graph

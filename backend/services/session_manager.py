@@ -42,6 +42,7 @@ class SessionManager:
         self.sessions: Dict[str, Session] = {}
         self.ttl_seconds: int = ttl_seconds
         self.lock: Lock = Lock()
+        logger.info("DuckDB session manager initialized successfully.")
 
     def get_session(self, session_id: str) -> Session:
         """

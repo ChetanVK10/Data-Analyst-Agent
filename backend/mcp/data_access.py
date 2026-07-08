@@ -9,12 +9,33 @@ logger = logging.getLogger(__name__)
 def is_csv_session(session_id: str) -> bool:
     """
     Checks if the session is CSV-backed (i.e., exists in the SessionManager
-    and has registered in-memory tables).
+    and has registered in-memory tables). Auto-restores the session table
+    from the scratch directory if the in-memory cache has been evicted or cleared.
     """
+    import os
     if session_id in session_manager.sessions:
         session = session_manager.get_session(session_id)
         if len(session.registered_tables) > 0:
             return True
+
+    # Attempt to auto-restore from Postgres session record and persistent scratch CSV file
+    from backend.database.repository import get_session
+    try:
+        session_record = get_session(session_id)
+        if session_record:
+            dataset_id = session_record.get("dataset_id")
+            dataset_name = session_record.get("dataset_name")
+            if dataset_name and dataset_name.lower().endswith(".csv") and dataset_id:
+                # Check persistent scratch file path
+                scratch_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "scratch", session_id))
+                csv_path = os.path.join(scratch_dir, f"{dataset_id}.csv")
+                if os.path.exists(csv_path):
+                    logger.info(f"Auto-restoring DuckDB session cache for dataset {dataset_id} in session {session_id} from {csv_path}")
+                    session_manager.register_csv(session_id, csv_path, dataset_id)
+                    return True
+    except Exception as e:
+        logger.error(f"Error in is_csv_session dynamic session restoration: {e}")
+
     return False
 
 def get_schema(session_id: str, dataset_id: str) -> Dict[str, Any]:

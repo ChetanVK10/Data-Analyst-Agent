@@ -140,7 +140,7 @@ def _call_llm_for_report(
     llm = get_llm(temperature=0.3)
     response = llm.invoke(messages)
     raw = _clean_json(response.content)
-    data = json.loads(raw)
+    data = json.loads(raw, strict=False)
     return LLMReportOutput.model_validate(data)
 
 
@@ -281,9 +281,9 @@ def report_agent_node(state: AgentState) -> Dict[str, Any]:
                 session_id=session_id,
                 question=question,
                 report_data={
-                    "executive_summary": llm_output.executive_summary.model_dump(),
-                    "insights": [i.model_dump() for i in llm_output.insights],
-                    "recommendations": [r.model_dump() for r in llm_output.recommendations],
+                    "executive_summary": llm_output.executive_summary.model_dump(mode="json"),
+                    "insights": [i.model_dump(mode="json") for i in llm_output.insights],
+                    "recommendations": [r.model_dump(mode="json") for r in llm_output.recommendations],
                 },
                 tables=[],
                 scratch_dir=scratch_dir,
@@ -296,11 +296,11 @@ def report_agent_node(state: AgentState) -> Dict[str, Any]:
             "dataset": dataset_info,
             "report": {
                 "title": llm_output.title,
-                "executive_summary": llm_output.executive_summary.model_dump(),
+                "executive_summary": llm_output.executive_summary.model_dump(mode="json"),
                 "tables": [],
                 "charts": [],
-                "insights": [i.model_dump() for i in llm_output.insights],
-                "recommendations": [r.model_dump() for r in llm_output.recommendations],
+                "insights": [i.model_dump(mode="json") for i in llm_output.insights],
+                "recommendations": [r.model_dump(mode="json") for r in llm_output.recommendations],
             },
             "debug": {
                 "generated_sql": code or None,
@@ -404,9 +404,9 @@ def report_agent_node(state: AgentState) -> Dict[str, Any]:
             session_id=session_id,
             question=question,
             report_data={
-                "executive_summary": llm_output.executive_summary.model_dump(),
-                "insights": [i.model_dump() for i in llm_output.insights],
-                "recommendations": [r.model_dump() for r in llm_output.recommendations],
+                "executive_summary": llm_output.executive_summary.model_dump(mode="json"),
+                "insights": [i.model_dump(mode="json") for i in llm_output.insights],
+                "recommendations": [r.model_dump(mode="json") for r in llm_output.recommendations],
             },
             tables=tables,
             scratch_dir=scratch_dir,
@@ -420,11 +420,11 @@ def report_agent_node(state: AgentState) -> Dict[str, Any]:
         "dataset": dataset_info,
         "report": {
             "title": llm_output.title,
-            "executive_summary": llm_output.executive_summary.model_dump(),
+            "executive_summary": llm_output.executive_summary.model_dump(mode="json"),
             "tables": tables,
             "charts": charts,
-            "insights": [i.model_dump() for i in llm_output.insights],
-            "recommendations": [r.model_dump() for r in llm_output.recommendations],
+            "insights": [i.model_dump(mode="json") for i in llm_output.insights],
+            "recommendations": [r.model_dump(mode="json") for r in llm_output.recommendations],
         },
         "debug": {
             "generated_sql": code or None,

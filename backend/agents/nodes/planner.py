@@ -92,7 +92,7 @@ Columns:
             content = content[:-3]
         content = content.strip()
 
-        plan_data = json.loads(content)
+        plan_data = json.loads(content, strict=False)
         logger.info(f"Generated plan. Approach: {plan_data.get('approach')}, Expected Output: {plan_data.get('expected_output_type')}")
         
         return {

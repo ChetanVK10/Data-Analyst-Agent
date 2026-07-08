@@ -114,7 +114,7 @@ Execution Output Summary:
             content = content[:-3]
         content = content.strip()
 
-        eval_res = json.loads(content)
+        eval_res = json.loads(content, strict=False)
         
         if eval_res.get("answers_question") is True:
             logger.info("Validator Node passed semantic check successfully.")

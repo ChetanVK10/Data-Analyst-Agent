@@ -1,13 +1,37 @@
 import os
 import logging
 from contextlib import contextmanager
+from urllib.parse import urlparse, urlunparse
 from psycopg_pool import ConnectionPool
 from psycopg.rows import dict_row
 
+# Use centralized settings module
+from backend.config import DATABASE_URL
+
 logger = logging.getLogger(__name__)
 
-# Read database URL from environment. Provide a default local postgres path for development
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/postgres")
+def get_sanitized_db_url(url: str) -> str:
+    """
+    Returns a sanitized database URL with credentials (username/password) masked for secure logging.
+    """
+    try:
+        parsed = urlparse(url)
+        if parsed.password:
+            # Mask both username and password
+            netloc = f"*****:*****@{parsed.hostname}"
+            if parsed.port:
+                netloc += f":{parsed.port}"
+        elif parsed.username:
+            netloc = f"*****@{parsed.hostname}"
+            if parsed.port:
+                netloc += f":{parsed.port}"
+        else:
+            netloc = parsed.netloc
+        
+        sanitized_parsed = parsed._replace(netloc=netloc)
+        return urlunparse(sanitized_parsed)
+    except Exception:
+        return "postgresql://***:***@***/database"
 
 # Initialize connection pool
 pool = None
@@ -15,9 +39,16 @@ pool = None
 def get_pool() -> ConnectionPool:
     global pool
     if pool is None:
-        logger.info(f"Initializing PostgreSQL connection pool with URL: {DATABASE_URL}")
+        sanitized_url = get_sanitized_db_url(DATABASE_URL)
+        logger.info(f"Initializing PostgreSQL connection pool with URL: {sanitized_url}")
         # min_size=1, max_size=10 is suitable for our single developer / resume-quality scale
-        pool = ConnectionPool(conninfo=DATABASE_URL, min_size=1, max_size=10, open=True, kwargs={"autocommit": True})
+        new_pool = ConnectionPool(conninfo=DATABASE_URL, min_size=1, max_size=10, open=True, kwargs={"autocommit": True})
+        
+        # Wait until the pool is ready (at least min_size connections established)
+        new_pool.wait()
+        
+        pool = new_pool
+        logger.info("PostgreSQL connection pool initialized successfully and verified database connectivity.")
     return pool
 
 @contextmanager
