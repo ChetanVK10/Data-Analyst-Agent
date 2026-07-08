@@ -17,36 +17,35 @@ from backend.agents.nodes.report_agent import report_agent_node
 from backend.agents.nodes.visualization_generator import visualization_generator_node
 from backend.agents.nodes.visualization_executor import visualization_executor_node
 from backend.agents.nodes.visualization_reflection import visualization_reflection_node
+from backend.agents.nodes.analysis_engine import analysis_engine_node
 
 logger = logging.getLogger(__name__)
 
-def route_reflection(state: AgentState) -> str:
-    """
-    Conditional router function returning the target node determined in reflection.
-    """
-    target = state.get("retry_target", "report_agent")
-    logger.info(f"Routing conditional edge: 'reflection' -> '{target}'")
-    
-    if target == "planner":
-        return "planner"
-    elif target == "code_generator":
-        return "code_generator"
-    elif target == "visualization_generator":
-        return "visualization_generator"
-    else:
-        return "report_agent"
+from backend.agents.nodes.supervisor import supervisor_node
+from backend.agents.capability_registry import CAPABILITIES
 
-def route_visualization_reflection(state: AgentState) -> str:
+def route_supervisor(state: AgentState) -> str:
     """
-    Conditional router for visualization errors / recovery.
+    Dynamic router reading the Supervisor's latest decision.
     """
-    target = state.get("retry_target", "report_agent")
-    logger.info(f"Routing conditional edge: 'visualization_reflection' -> '{target}'")
+    history = state.get("supervisor_history")
+    if not history:
+        logger.warning("No supervisor history found. Terminating.")
+        return END
     
-    if target == "visualization_generator":
-        return "visualization_generator"
-    else:
-        return "report_agent"
+    last_decision = history[-1]
+    if last_decision.get("decision") == "TERMINATE":
+        logger.info("Supervisor decided to TERMINATE workflow.")
+        return END
+        
+    cap_name = last_decision.get("selected_capability")
+    if not cap_name or cap_name not in CAPABILITIES:
+        logger.warning(f"Supervisor selected invalid capability: {cap_name}. Terminating.")
+        return END
+        
+    target_node = CAPABILITIES[cap_name].entry_node
+    logger.info(f"Supervisor routing to capability {cap_name} (node: {target_node})")
+    return target_node
 
 def create_agent_graph(pool) -> Any:
     """
@@ -57,52 +56,49 @@ def create_agent_graph(pool) -> Any:
     workflow = StateGraph(AgentState)
     
     # Register Nodes
+    workflow.add_node("supervisor", supervisor_node)
     workflow.add_node("schema_profiler", schema_profiler_node)
     workflow.add_node("planner", planner_node)
     workflow.add_node("code_generator", code_generator_node)
     workflow.add_node("sandbox_executor", sandbox_executor_node)
     workflow.add_node("validator", validator_node)
     workflow.add_node("reflection", reflection_node)
+    workflow.add_node("analysis_engine", analysis_engine_node)
     workflow.add_node("visualization_generator", visualization_generator_node)
     workflow.add_node("visualization_executor", visualization_executor_node)
     workflow.add_node("visualization_reflection", visualization_reflection_node)
     workflow.add_node("report_agent", report_agent_node)
     
     # Configure Static Edges
-    workflow.set_entry_point("schema_profiler")
-    workflow.add_edge("schema_profiler", "planner")
+    workflow.set_entry_point("supervisor")
+    
+    # All worker chains eventually return to the supervisor
+    workflow.add_edge("schema_profiler", "supervisor")
+    workflow.add_edge("reflection", "supervisor")
+    workflow.add_edge("analysis_engine", "supervisor")
+    workflow.add_edge("visualization_reflection", "supervisor")
+    workflow.add_edge("report_agent", "supervisor")
+    
+    # SQL Capability internal chain
     workflow.add_edge("planner", "code_generator")
     workflow.add_edge("code_generator", "sandbox_executor")
     workflow.add_edge("sandbox_executor", "validator")
     workflow.add_edge("validator", "reflection")
     
-    # Visualization path static edges
+    # Visualization Capability internal chain
     workflow.add_edge("visualization_generator", "visualization_executor")
     workflow.add_edge("visualization_executor", "visualization_reflection")
     
-    # Configure Conditional Routing
+    # Configure Dynamic Routing from Supervisor
+    # Map valid return node strings to themselves, and map END
+    supervisor_route_map = {cap.entry_node: cap.entry_node for cap in CAPABILITIES.values()}
+    supervisor_route_map[END] = END
+
     workflow.add_conditional_edges(
-        "reflection",
-        route_reflection,
-        {
-            "planner": "planner",
-            "code_generator": "code_generator",
-            "visualization_generator": "visualization_generator",
-            "report_agent": "report_agent"
-        }
+        "supervisor",
+        route_supervisor,
+        supervisor_route_map
     )
-    
-    workflow.add_conditional_edges(
-        "visualization_reflection",
-        route_visualization_reflection,
-        {
-            "visualization_generator": "visualization_generator",
-            "report_agent": "report_agent"
-        }
-    )
-    
-    # Finish workflow
-    workflow.add_edge("report_agent", END)
     
     # Configure Checkpointer
     logger.info("Setting up LangGraph PostgresSaver checkpointer...")

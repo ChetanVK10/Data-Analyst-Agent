@@ -12,7 +12,7 @@ from charset_normalizer import detect
 
 # Import configurations & helpers
 from backend.config import DATABASE_URL
-from backend.database.connection import init_db, get_pool, close_pool
+from backend.database.connection import init_db, get_pool, close_pool, get_db_connection
 from backend.database.repository import (
     create_session, 
     get_session, 
@@ -291,6 +291,7 @@ async def analyze_data(request: AnalyzeRequest):
         "vis_retry_count":   0,
         "vis_retry_history": [],
         "final_report":      None,
+        "execution_metadata": [],
     }
 
     logger.info(f"LangGraph execution start — session={session_id}")

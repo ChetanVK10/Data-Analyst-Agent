@@ -1,4 +1,5 @@
 import json
+import time
 import logging
 from typing import Dict, Any
 from backend.agents.state import AgentState
@@ -8,17 +9,32 @@ from langchain_core.messages import SystemMessage, HumanMessage
 logger = logging.getLogger(__name__)
 
 VALIDATOR_SYSTEM_PROMPT = """You are the Semantic Data Validator for the Autonomous Data Analyst Agent.
-Your job is to review the user's question, the executed code/query, and the resulting preview data, and verify if the execution actually answers the user's query.
+Your job is to review the user's question, the plan, the executed code/query, and the resulting preview data, and perform a deep validation of the query results.
 
 CRITICAL CHECKS:
-1. Logic: Did the code compute what was asked? (e.g., if asked for Average, did it calculate SUM instead?)
-2. Columns: Are the metrics correct according to columns?
-3. Answers Intent: Does the result directly answer the natural language request?
+1. Empty Result Sets: Did the execution produce 0 rows or empty outputs?
+2. Missing Requested Columns: Are all dimensions and metrics requested in the question present in the query columns?
+3. Incorrect Aggregation: Did the query use incorrect mathematical functions (e.g., SUM instead of AVG, COUNT instead of SUM, or raw SELECT without aggregation when aggregation was expected)?
+4. Semantic Correctness & Intent Mismatch: Does the code query exactly what the question asks for? Check tables, filters, joins, groupings, and orderings. E.g. sorting ASC instead of DESC.
+5. Duplicate/Suspicious Outputs: Check if the preview data contains unexpected duplicates, incorrect duplicate joins (mismatched primary keys causing duplicate multiplication), or other anomalies.
+6. Unexpected NULL-Heavy Outputs: Verify if the output has an abnormally high ratio of NULL values in critical columns.
+7. Confidence Score: Assess confidence that the data accurately and correctly answers the user's question.
 
-You must output a JSON object with:
+You must output a JSON object matching exactly this schema:
 {
-  "answers_question": true/false,
-  "reason": "Clear explanation of why it does or does not answer the question."
+  "answers_question": true, // set to false if ANY check fails
+  "confidence_score": "High", // "High" | "Medium" | "Low"
+  "reason": "Detailed explanation of why it does or does not answer the question.",
+  "checks": {
+    "is_empty": false,
+    "missing_columns": [] or ["col1", ...],
+    "incorrect_aggregation": false,
+    "semantic_mismatch": false,
+    "duplicate_anomalies": false,
+    "null_heavy": false
+  },
+  "suggested_retry_target": "planner", // "planner" (for logic redesign) or "code_generator" (for SQL/code fixes) or "none"
+  "suggested_retry_strategy": "Specific instructions for the next agent on how to adjust the plan, SQL, or aggregations."
 }
 
 Ensure your response is valid JSON only. Do not wrap in markdown blocks other than standard json output.
@@ -27,118 +43,152 @@ Ensure your response is valid JSON only. Do not wrap in markdown blocks other th
 def validator_node(state: AgentState) -> Dict[str, Any]:
     """
     Validates execution results. Checks runtime errors, structural matching, and semantic correctness.
-    Classifies failure types accordingly.
+    Classifies failure types and logs telemetry.
     """
+    node_name = "validator"
+    start_time = time.time()
+    retry_count = state.get("retry_count", 0)
+    
+    logger.info(f"Node started: {node_name} (Retry count: {retry_count})")
+    
     question = state.get("question")
     plan = state.get("plan") or {}
-    expected_output_type = (
-    state.get("expected_output_type")
-    or plan.get("expected_output_type"))
+    expected_output_type = state.get("expected_output_type") or plan.get("expected_output_type")
     code = state.get("generated_code")
     execution_success = state.get("execution_success", False)
     output_summary = state.get("output_summary") or {}
     
-    logger.info(f"Running Validator Node (Success state: {execution_success})")
-
+    status = "success"
+    error_msg = None
+    validation_passed = False
+    failure_summary = None
+    
     # 1. RUNTIME & TIMEOUT FAILURE CLASSIFICATION
     if not execution_success:
         error_msg = output_summary.get("error", "Unknown execution error.")
+        failure_type = "timeout" if "timeout" in error_msg.lower() else "runtime"
         
-        # Check if it was a timeout
-        if "timeout" in error_msg.lower():
-            failure_type = "timeout"
-        else:
-            failure_type = "runtime"
-
         failure_summary = {
             "failure_type": failure_type,
             "error_message": error_msg,
             "code_context": output_summary.get("code_context", code or ""),
-            "expected_vs_actual": f"Expected: Successful run. Actual: Crashed with error: {error_msg}"
+            "expected_vs_actual": (
+                f"Expected: Successful code run. Actual: Crashed with error: {error_msg}. "
+                "Suggested Retry Target: code_generator. Suggested Retry Strategy: Debug syntax, libraries, or timeout limits."
+            )
         }
         
-        logger.info(f"Validator Classified: {failure_type} failure. Message: {error_msg}")
-        return {
-            "validation_passed": False,
-            "failure_summary": failure_summary
-        }
-
-    # 2. STRUCTURAL & VISUALIZATION FAILURE CLASSIFICATION
-    approach = plan.get("approach", "sql")
-    
-    if expected_output_type in ["chart", "dataframe"]:
+        logger.warning(f"Validator Classified: {failure_type} failure. Message: {error_msg}")
+        status = "failed"
+        
+    # 2. STRUCTURAL FAILURE (PROGRAMMATIC EMPTY CHECK)
+    elif expected_output_type in ["chart", "dataframe"] and (not output_summary.get("columns") or output_summary.get("row_count", 0) == 0):
         columns = output_summary.get("columns", [])
         row_count = output_summary.get("row_count", 0)
         
-        if not columns or row_count == 0:
-            failure_summary = {
-                "failure_type": "structural",
-                "error_message": "The SQL query returned an empty result set or no columns.",
-                "code_context": code or "",
-                "expected_vs_actual": f"Expected: Dataframe with rows. Actual: Returned columns {columns}, row count {row_count}."
-            }
-            logger.info("Validator Classified: structural failure (empty or column-less result set).")
-            return {
-                "validation_passed": False,
-                "failure_summary": failure_summary
-            }
-
+        error_msg = "The SQL query returned an empty result set or no columns."
+        failure_summary = {
+            "failure_type": "structural",
+            "error_message": error_msg,
+            "code_context": code or "",
+            "expected_vs_actual": (
+                f"Expected: Dataframe with rows. Actual: Returned columns {columns}, row count {row_count}. "
+                "Suggested Retry Target: code_generator. Suggested Retry Strategy: Check table names, ensure filter parameters match data records."
+            )
+        }
+        logger.warning(f"Validator Classified programmatic structural failure: columns={columns}, rows={row_count}")
+        status = "failed"
+        
     # 3. SEMANTIC FAILURE CLASSIFICATION (Call LLM Evaluator)
-    # Prepare preview info
-    preview_data = output_summary.get("preview", [])
-    
-    evaluator_context = f"""
+    else:
+        preview_data = output_summary.get("preview", [])
+        approach = plan.get("approach", "sql")
+        plan_steps = "\n".join([f"- {s}" for s in plan.get("steps", [])])
+        
+        evaluator_context = f"""
 User Question: {question}
+Execution Plan:
+{plan_steps}
+
 Executed {approach.upper()} Code/Query:
 {code}
 
-Execution Output Summary:
-- Expected Output Shape: {expected_output_type}
-- Data/Result Preview:
-{preview_data}
+Execution Output Shape: {expected_output_type}
+Columns Returned: {output_summary.get("columns", [])}
+Total Row Count: {output_summary.get("row_count", 0)}
+
+Data Preview (Top Rows):
+{json.dumps(preview_data, indent=2, default=str)}
 """
+        messages = [
+            SystemMessage(content=VALIDATOR_SYSTEM_PROMPT),
+            HumanMessage(content=evaluator_context)
+        ]
 
-    messages = [
-        SystemMessage(content=VALIDATOR_SYSTEM_PROMPT),
-        HumanMessage(content=evaluator_context)
-    ]
+        try:
+            llm = get_llm(temperature=0.0)
+            response = llm.invoke(messages)
+            content = response.content.strip()
 
-    try:
-        llm = get_llm(temperature=0.0)
-        response = llm.invoke(messages)
-        content = response.content.strip()
+            if content.startswith("```json"):
+                content = content[7:]
+            if content.endswith("```"):
+                content = content[:-3]
+            content = content.strip()
 
-        if content.startswith("```json"):
-            content = content[7:]
-        if content.endswith("```"):
-            content = content[:-3]
-        content = content.strip()
+            eval_res = json.loads(content, strict=False)
+            
+            if eval_res.get("answers_question") is True:
+                logger.info("Validator Node passed semantic check successfully.")
+                validation_passed = True
+            else:
+                reason = eval_res.get("reason", "Result does not semantically answer user's question.")
+                suggested_target = eval_res.get("suggested_retry_target", "planner")
+                # Map suggested retry target to failure type:
+                # - planner -> semantic
+                # - code_generator -> structural
+                failure_type = "semantic" if suggested_target == "planner" else "structural"
+                
+                failure_summary = {
+                    "failure_type": failure_type,
+                    "error_message": reason,
+                    "code_context": code or "",
+                    "expected_vs_actual": (
+                        f"Confidence Score: {eval_res.get('confidence_score', 'Low')}\n"
+                        f"Checks performed: {eval_res.get('checks', {})}\n"
+                        f"Suggested Retry Target: {suggested_target}\n"
+                        f"Suggested Retry Strategy: {eval_res.get('suggested_retry_strategy')}"
+                    )
+                }
+                logger.warning(f"Validator Classified: {failure_type} semantic failure. Reason: {reason}")
+                status = "failed"
+                error_msg = reason
+                
+        except Exception as e:
+            logger.error(f"Error in Validator Node semantic check: {e}")
+            # Fallback to pass so LLM api issues don't crash execution loop
+            validation_passed = True
 
-        eval_res = json.loads(content, strict=False)
-        
-        if eval_res.get("answers_question") is True:
-            logger.info("Validator Node passed semantic check successfully.")
-            return {
-                "validation_passed": True,
-                "failure_summary": None
-            }
-        else:
-            reason = eval_res.get("reason", "Result does not semantically answer user's question.")
-            failure_summary = {
-                "failure_type": "semantic",
-                "error_message": "Semantic validation failed.",
-                "code_context": code or "",
-                "expected_vs_actual": f"Validator Reason: {reason}"
-            }
-            logger.info(f"Validator Classified: semantic failure. Reason: {reason}")
-            return {
-                "validation_passed": False,
-                "failure_summary": failure_summary
-            }
-    except Exception as e:
-        logger.error(f"Error in Validator Node semantic check: {e}")
-        # Default to pass in case of LLM API failure so we don't block the loop on simple model glitches
-        return {
-            "validation_passed": True,
-            "failure_summary": None
-        }
+    # Calculate execution metrics
+    end_time = time.time()
+    duration_ms = (end_time - start_time) * 1000
+    logger.info(f"Node completed: {node_name} in {duration_ms:.2f}ms | Success: {status == 'success'}")
+    
+    node_metadata = {
+        "node_name": node_name,
+        "start_time": start_time,
+        "end_time": end_time,
+        "duration_ms": duration_ms,
+        "status": status,
+        "retry_count": retry_count,
+        "error_message": error_msg
+    }
+    
+    execution_metadata = list(state.get("execution_metadata") or [])
+    execution_metadata.append(node_metadata)
+    
+    return {
+        "validation_passed": validation_passed,
+        "failure_summary": failure_summary,
+        "execution_metadata": execution_metadata
+    }

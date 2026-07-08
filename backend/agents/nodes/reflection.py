@@ -9,67 +9,96 @@ def reflection_node(state: AgentState) -> Dict[str, Any]:
     Decides whether to retry, what node to route to, increments the retry counter,
     and appends the failure to the history.
     """
+    import time
+    node_name = "reflection"
+    start_time = time.time()
+    retry_count = state.get("retry_count", 0)
+    
+    logger.info(f"Node started: {node_name} (Retry count: {retry_count})")
+    
     validation_passed = state.get("validation_passed", False)
     failure_summary = state.get("failure_summary")
-    retry_count = state.get("retry_count", 0)
     retry_history = list(state.get("retry_history", []))
-
-    logger.info(f"Running Reflection Node. Validation passed: {validation_passed}, Retry count: {retry_count}")
+    
+    status = "success"
+    error_msg = None
+    updates = {}
 
     # Success case
     if validation_passed:
         if state.get("expected_output_type") == "chart":
-            logger.info("Validation passed. Routing to visualization generator.")
-            return {
-                "retry_target": "visualization_generator",
-                "graceful_failure": False
-            }
+            logger.info("Validation passed. Hinting VISUALIZATION.")
+            routing_hint = "VISUALIZATION"
         else:
-            logger.info("Validation passed. Routing to report agent.")
-            return {
-                "retry_target": "report_agent",
-                "graceful_failure": False
-            }
+            logger.info("Validation passed. Hinting REPORT.")
+            routing_hint = "REPORT"
 
     # Hard cap of 3 retries reached
-    if retry_count >= 3:
-        logger.warning("Hard retry limit of 3 reached. Routing to report agent with graceful failure.")
+    elif retry_count >= 3:
+        logger.warning("Hard retry limit of 3 reached. Graceful degradation to REPORT.")
         if failure_summary:
             retry_history.append(failure_summary)
-        return {
-            "retry_target": "report_agent",
+        status = "failed"
+        error_msg = "Hard retry limit of 3 reached."
+        routing_hint = "REPORT"
+        updates = {
             "graceful_failure": True,
             "retry_history": retry_history
         }
 
     # Prepare retry routing logic
-    if not failure_summary:
-        # Fallback if validation failed but no failure summary was created
-        failure_summary = {
-            "failure_type": "runtime",
-            "error_message": "Validation failed with unspecified error.",
-            "code_context": "",
-            "expected_vs_actual": ""
+    else:
+        if not failure_summary:
+            # Fallback if validation failed but no failure summary was created
+            failure_summary = {
+                "failure_type": "runtime",
+                "error_message": "Validation failed with unspecified error.",
+                "code_context": "",
+                "expected_vs_actual": ""
+            }
+
+        retry_history.append(failure_summary)
+        new_retry_count = retry_count + 1
+
+        failure_type = failure_summary.get("failure_type")
+        
+        logger.info(f"Retrying SQL capability. Attempt {new_retry_count}/3. Failure type '{failure_type}'")
+        status = "failed"
+        error_msg = failure_summary.get("error_message")
+        routing_hint = "SQL"
+        updates = {
+            "retry_count": new_retry_count,
+            "retry_history": retry_history,
+            "graceful_failure": False
         }
 
-    retry_history.append(failure_summary)
-    new_retry_count = retry_count + 1
-
-    failure_type = failure_summary.get("failure_type")
+    # Record metrics
+    end_time = time.time()
+    duration_ms = (end_time - start_time) * 1000
+    logger.info(f"Node completed: {node_name} in {duration_ms:.2f}ms | Status: {status}")
     
-    # Route logic:
-    # - semantic -> back to planner
-    # - runtime, structural, timeout, visualization -> back to code_generator
-    if failure_type == "semantic":
-        retry_target = "planner"
-    else:
-        retry_target = "code_generator"
-
-    logger.info(f"Retrying. Attempt {new_retry_count}/3. Failure type '{failure_type}' -> Routing to '{retry_target}'")
-    
-    return {
-        "retry_count": new_retry_count,
-        "retry_target": retry_target,
-        "retry_history": retry_history,
-        "graceful_failure": False
+    node_metadata = {
+        "node_name": node_name,
+        "start_time": start_time,
+        "end_time": end_time,
+        "duration_ms": duration_ms,
+        "status": status,
+        "retry_count": retry_count,
+        "error_message": error_msg
     }
+    
+    execution_metadata = list(state.get("execution_metadata") or [])
+    execution_metadata.append(node_metadata)
+    updates["execution_metadata"] = execution_metadata
+    
+    worker_result = {
+        "worker_name": "SQL",
+        "status": status,
+        "confidence": 1.0 if status == "success" else 0.0,
+        "summary": error_msg if error_msg else "SQL capability completed successfully.",
+        "routing_hint": routing_hint,
+        "duration_ms": duration_ms
+    }
+    updates["last_worker_result"] = worker_result
+    
+    return updates

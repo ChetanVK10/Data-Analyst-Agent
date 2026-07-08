@@ -197,6 +197,12 @@ def report_agent_node(state: AgentState) -> Dict[str, Any]:
     Failure path (graceful_failure=True):
       Same as above but uses REPORT_FAILURE_SYSTEM_PROMPT and omits tables/charts.
     """
+    import time
+    node_name = "report_agent"
+    start_time = time.time()
+    retry_count = state.get("retry_count", 0)
+    
+    logger.info(f"Node started: {node_name} (Retry count: {retry_count})")
     session_id     = state.get("session_id", "")
     question       = state.get("question", "")
     code           = state.get("generated_code") or ""
@@ -309,7 +315,36 @@ def report_agent_node(state: AgentState) -> Dict[str, Any]:
             },
             "pdf_path": pdf_path,
         }
-        return {"final_report": final_report}
+        end_time = time.time()
+        duration_ms = (end_time - start_time) * 1000
+        logger.info(f"Node completed: {node_name} (graceful failure path) in {duration_ms:.2f}ms")
+        
+        node_metadata = {
+            "node_name": node_name,
+            "start_time": start_time,
+            "end_time": end_time,
+            "duration_ms": duration_ms,
+            "status": "failed",
+            "retry_count": retry_count,
+            "error_message": "Exhausted retries, returned graceful failure report."
+        }
+        execution_metadata = list(state.get("execution_metadata") or [])
+        execution_metadata.append(node_metadata)
+        
+        worker_result = {
+            "worker_name": "REPORT",
+            "status": "success",
+            "confidence": 1.0,
+            "summary": "Graceful degradation report generated.",
+            "routing_hint": "TERMINATE",
+            "duration_ms": duration_ms
+        }
+        
+        return {
+            "final_report": final_report,
+            "execution_metadata": execution_metadata,
+            "last_worker_result": worker_result
+        }
 
     # ═════════════════════════════════════════════════════════════════════════
     # SUCCESS PATH
@@ -434,5 +469,33 @@ def report_agent_node(state: AgentState) -> Dict[str, Any]:
         "pdf_path": pdf_path,
     }
 
-    logger.info("Report Agent — structured report assembled successfully.")
-    return {"final_report": final_report}
+    end_time = time.time()
+    duration_ms = (end_time - start_time) * 1000
+    logger.info(f"Node completed: {node_name} (success path) in {duration_ms:.2f}ms")
+    
+    node_metadata = {
+        "node_name": node_name,
+        "start_time": start_time,
+        "end_time": end_time,
+        "duration_ms": duration_ms,
+        "status": "success",
+        "retry_count": retry_count,
+        "error_message": None
+    }
+    execution_metadata = list(state.get("execution_metadata") or [])
+    execution_metadata.append(node_metadata)
+    
+    worker_result = {
+        "worker_name": "REPORT",
+        "status": "success",
+        "confidence": 1.0,
+        "summary": "Report generated successfully.",
+        "routing_hint": "TERMINATE",
+        "duration_ms": duration_ms
+    }
+    
+    return {
+        "final_report": final_report,
+        "execution_metadata": execution_metadata,
+        "last_worker_result": worker_result
+    }

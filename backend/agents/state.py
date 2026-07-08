@@ -6,6 +6,23 @@ class FailureSummary(TypedDict):
     code_context: str        # Specific lines of code / SQL statement that failed
     expected_vs_actual: str  # Diff or mismatch description (e.g., expected 3 columns, got 1)
 
+class WorkerResult(TypedDict, total=False):
+    worker_name: str
+    status: str              # 'success' or 'failed'
+    confidence: float        # 0.0 to 1.0 confidence score
+    summary: str             # Outcome summary or failure diagnostics
+    routing_hint: Optional[str] # Hint to the Supervisor, e.g., 'SQL', 'VISUALIZATION', 'TERMINATE'
+    analysis_type: Optional[str] # e.g. 'correlation', 'descriptive_stats', 'trend'
+    duration_ms: Optional[float]
+    token_usage: Optional[int]
+    estimated_cost: Optional[float]
+
+class SupervisorDecision(TypedDict, total=False):
+    decision: str            # 'CONTINUE', 'RETRY', 'TERMINATE'
+    reasoning: str           # Why the supervisor made this decision
+    selected_capability: Optional[str] # E.g., 'SQL', 'VISUALIZATION', 'REPORT'
+    timestamp: float         # When the decision was made
+
 class AgentState(TypedDict):
     # Core Identification
     session_id: str
@@ -46,3 +63,14 @@ class AgentState(TypedDict):
     
     # Final Output Specs (Plotly JSON, Narrative markdown, PDF file path)
     final_report: Optional[Dict[str, Any]]
+    
+    # Telemetry and Execution Observability
+    execution_metadata: Optional[List[Dict[str, Any]]]
+    
+    # Phase 2 Supervisor & Worker State
+    last_worker_result: Optional[WorkerResult]
+    supervisor_history: List[SupervisorDecision]
+    overall_confidence: float
+    
+    # Phase 3 Generic Analysis State
+    analysis_artifacts: Optional[Dict[str, Any]]

@@ -37,13 +37,22 @@ def planner_node(state: AgentState) -> Dict[str, Any]:
     """
     Analyzes the schema and question, and returns an execution plan.
     """
+    import time
+    node_name = "planner"
+    start_time = time.time()
+    retry_count = state.get("retry_count", 0)
+    
+    logger.info(f"Node started: {node_name} (Retry count: {retry_count})")
+    
     question = state.get("question")
     schema_profile = state.get("schema_profile")
     table_name = state.get("duckdb_table") or state.get("dataset_id")
     retry_history = state.get("retry_history", [])
     
-    logger.info(f"Running Planner Node for question: '{question}' (Table: {table_name})")
-
+    status = "success"
+    error_msg = None
+    updates = {}
+    
     # Construct the schema description for the LLM
     columns_desc = ""
     for col in schema_profile.get("columns", []):
@@ -95,24 +104,46 @@ Columns:
         plan_data = json.loads(content, strict=False)
         logger.info(f"Generated plan. Approach: {plan_data.get('approach')}, Expected Output: {plan_data.get('expected_output_type')}")
         
-        return {
+        updates = {
             "plan": plan_data,
             "expected_output_type": plan_data.get("expected_output_type"),
-            # Reset generated code and execution success for the new plan
             "generated_code": None,
             "execution_success": False
         }
     except Exception as e:
         logger.error(f"Error in Planner Node: {e}")
+        status = "failed"
+        error_msg = str(e)
         # Default plan to allow progression
         fallback_plan = {
             "steps": ["Retrieve data using SELECT *"],
             "approach": "sql",
             "expected_output_type": "dataframe"
         }
-        return {
+        updates = {
             "plan": fallback_plan,
             "expected_output_type": "dataframe",
             "generated_code": None,
             "execution_success": False
         }
+
+    # Record metrics
+    end_time = time.time()
+    duration_ms = (end_time - start_time) * 1000
+    logger.info(f"Node completed: {node_name} in {duration_ms:.2f}ms | Status: {status}")
+    
+    node_metadata = {
+        "node_name": node_name,
+        "start_time": start_time,
+        "end_time": end_time,
+        "duration_ms": duration_ms,
+        "status": status,
+        "retry_count": retry_count,
+        "error_message": error_msg
+    }
+    
+    execution_metadata = list(state.get("execution_metadata") or [])
+    execution_metadata.append(node_metadata)
+    updates["execution_metadata"] = execution_metadata
+    
+    return updates

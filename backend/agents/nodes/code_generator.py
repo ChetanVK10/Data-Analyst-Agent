@@ -66,6 +66,13 @@ def code_generator_node(state: AgentState) -> Dict[str, Any]:
     """
     Generates SQL or Python code based on the plan and schema.
     """
+    import time
+    node_name = "code_generator"
+    start_time = time.time()
+    retry_count = state.get("retry_count", 0)
+    
+    logger.info(f"Node started: {node_name} (Retry count: {retry_count})")
+    
     question = state.get("question")
     schema_profile = state.get("schema_profile")
     plan = state.get("plan") or {}
@@ -76,7 +83,9 @@ def code_generator_node(state: AgentState) -> Dict[str, Any]:
     approach = plan.get("approach", "sql")
     plan_steps = "\n".join([f"- {s}" for s in plan.get("steps", [])])
 
-    logger.info(f"Running Code Generator Node for approach: {approach}")
+    status = "success"
+    error_msg = None
+    generated_code = ""
 
     # Build schema description
     columns_desc = ""
@@ -128,8 +137,32 @@ def code_generator_node(state: AgentState) -> Dict[str, Any]:
                 lines = lines[:-1]
             code = "\n".join(lines).strip()
 
+        generated_code = code
         logger.info(f"Generated {approach.upper()} code successfully.")
-        return {"generated_code": code}
     except Exception as e:
         logger.error(f"Error in Code Generator Node: {e}")
-        return {"generated_code": ""}
+        status = "failed"
+        error_msg = str(e)
+
+    # Record metrics
+    end_time = time.time()
+    duration_ms = (end_time - start_time) * 1000
+    logger.info(f"Node completed: {node_name} in {duration_ms:.2f}ms | Status: {status}")
+    
+    node_metadata = {
+        "node_name": node_name,
+        "start_time": start_time,
+        "end_time": end_time,
+        "duration_ms": duration_ms,
+        "status": status,
+        "retry_count": retry_count,
+        "error_message": error_msg
+    }
+    
+    execution_metadata = list(state.get("execution_metadata") or [])
+    execution_metadata.append(node_metadata)
+    
+    return {
+        "generated_code": generated_code,
+        "execution_metadata": execution_metadata
+    }

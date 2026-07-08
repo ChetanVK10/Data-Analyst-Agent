@@ -58,12 +58,23 @@ def run_python_in_sandbox(session_id: str, dataset_id: str, code: str) -> Tuple[
     python_exe = sys.executable
     
     try:
+        # Harden sandbox by constructing a whitelisted environment (drop all API/secrets/DB credentials)
+        whitelist_keys = {
+            "PATH", "PYTHONPATH", "TEMP", "TMP", 
+            "SYSTEMROOT", "WINDIR", "COMSPEC", "PATHEXT", "SYSTEM32"
+        }
+        whitelist_env = {
+            k: v for k, v in os.environ.items()
+            if k.upper() in whitelist_keys or k.upper().startswith("LC_") or k.upper().startswith("LANG")
+        }
+
         # Run subprocess with timeout
         result = subprocess.run(
             [python_exe, "sandbox_run.py"],
             cwd=session_dir,
             capture_output=True,
             text=True,
+            env=whitelist_env,
             timeout=SANDBOX_TIMEOUT_SECONDS
         )
         

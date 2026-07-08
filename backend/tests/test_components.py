@@ -109,7 +109,7 @@ class TestReflectionAndRouting(unittest.TestCase):
         }
         
         res = reflection_node(state)
-        self.assertEqual(res["retry_target"], "code_generator")
+        self.assertEqual(res["last_worker_result"]["routing_hint"], "SQL")
         self.assertEqual(res["retry_count"], 1)
         self.assertEqual(len(res["retry_history"]), 1)
 
@@ -128,7 +128,7 @@ class TestReflectionAndRouting(unittest.TestCase):
         }
         
         res = reflection_node(state)
-        self.assertEqual(res["retry_target"], "planner")
+        self.assertEqual(res["last_worker_result"]["routing_hint"], "SQL")
         self.assertEqual(res["retry_count"], 2)
 
     def test_reflection_retry_limit_cutoff(self):
@@ -146,7 +146,7 @@ class TestReflectionAndRouting(unittest.TestCase):
         }
         
         res = reflection_node(state)
-        self.assertEqual(res["retry_target"], "report_agent")
+        self.assertEqual(res["last_worker_result"]["routing_hint"], "REPORT")
         self.assertTrue(res["graceful_failure"])
 
 class TestVisualizationReflection(unittest.TestCase):
@@ -158,8 +158,8 @@ class TestVisualizationReflection(unittest.TestCase):
             "vis_retry_history": []
         }
         res = visualization_reflection_node(state)
-        self.assertEqual(res["retry_target"], "report_agent")
-        self.assertFalse(res["graceful_failure"])
+        self.assertEqual(res["last_worker_result"]["routing_hint"], "REPORT")
+        self.assertFalse(res.get("graceful_failure", False))
 
     def test_vis_reflection_retry_routing(self):
         state = {
@@ -174,7 +174,7 @@ class TestVisualizationReflection(unittest.TestCase):
             "vis_retry_history": []
         }
         res = visualization_reflection_node(state)
-        self.assertEqual(res["retry_target"], "visualization_generator")
+        self.assertEqual(res["last_worker_result"]["routing_hint"], "VISUALIZATION")
         self.assertEqual(res["vis_retry_count"], 2)
         self.assertEqual(len(res["vis_retry_history"]), 1)
 
@@ -191,7 +191,7 @@ class TestVisualizationReflection(unittest.TestCase):
             "vis_retry_history": []
         }
         res = visualization_reflection_node(state)
-        self.assertEqual(res["retry_target"], "report_agent")
+        self.assertEqual(res["last_worker_result"]["routing_hint"], "REPORT")
         self.assertTrue(res["graceful_failure"])
 
 if __name__ == "__main__":
