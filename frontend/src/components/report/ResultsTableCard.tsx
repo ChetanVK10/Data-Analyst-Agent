@@ -8,8 +8,12 @@ const DEFAULT_PAGE_SIZE = 10;
 
 type SortDir = "asc" | "desc" | null;
 
-function formatValue(value: any, columnName: string): { formatted: string; align: "left" | "center" | "right" } {
-  if (value === null || value === undefined || value === "") {
+function formatValue(value: any, columnName: string, tableTitle?: string): { formatted: string; align: "left" | "center" | "right" } {
+  if (value === null || value === undefined) {
+    return { formatted: "—", align: "left" };
+  }
+
+  if (value === "") {
     return { formatted: "", align: "left" };
   }
 
@@ -22,6 +26,15 @@ function formatValue(value: any, columnName: string): { formatted: string; align
 
   const colLower = columnName.toLowerCase();
   let align: "left" | "center" | "right" = "right";
+
+  const isCorrelation = tableTitle?.toLowerCase().includes("correlation");
+  if (isCorrelation) {
+    const formatted = new Intl.NumberFormat("en-US", {
+      minimumFractionDigits: 5,
+      maximumFractionDigits: 5
+    }).format(num);
+    return { formatted, align };
+  }
 
   // Center column for IDs, years, dates
   if (colLower.includes("id") || colLower === "year" || colLower === "month" || colLower === "day" || colLower === "date") {
@@ -82,6 +95,19 @@ export function ResultsTableCard({ payload, onDownloadTriggered }: { payload: Ap
     [q, table.rows]
   );
 
+  // Pre-compute column alignments so header and body cells perfectly match
+  const colAlignments = useMemo(() => {
+    return table.columns.map((c, colIdx) => {
+      for (const row of table.rows) {
+        const val = row[colIdx];
+        if (val !== null && val !== undefined && val !== "") {
+          return formatValue(val, c, table.title).align;
+        }
+      }
+      return "left";
+    });
+  }, [table.rows, table.columns, table.title]);
+
   // Sort
   const sorted = useMemo(() => {
     if (sortCol === null || sortDir === null) return filtered;
@@ -119,7 +145,7 @@ export function ResultsTableCard({ payload, onDownloadTriggered }: { payload: Ap
   const handleCSVExport = () => {
     const headers = table.columns.join(",");
     const rows = sorted.map((row) =>
-      row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(",")
+      row.map((cell) => `"${String(cell ?? "").replace(/"/g, '""')}"`).join(",")
     );
     const csv = [headers, ...rows].join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -132,15 +158,6 @@ export function ResultsTableCard({ payload, onDownloadTriggered }: { payload: Ap
     if (onDownloadTriggered) {
       onDownloadTriggered();
     }
-  };
-
-  const getColumnAlignment = (colIdx: number, columnName: string): "left" | "center" | "right" => {
-    if (table.rows.length > 0) {
-      const sampleCell = table.rows[0][colIdx];
-      const { align } = formatValue(sampleCell, columnName);
-      return align;
-    }
-    return "left";
   };
 
   const SortIcon = ({ colIdx }: { colIdx: number }) => {
@@ -179,25 +196,29 @@ export function ResultsTableCard({ payload, onDownloadTriggered }: { payload: Ap
       }
     >
       <div className="scrollbar-thin overflow-x-auto rounded-xl border border-border max-h-[400px]">
-        <table className="w-full min-w-full text-left text-sm border-collapse">
+        <table className="w-full min-w-full text-left text-sm border-collapse table-fixed">
           <thead className="sticky top-0 bg-secondary/95 backdrop-blur z-10 shadow-sm">
             <tr>
               {table.columns.map((c, colIdx) => {
-                const align = getColumnAlignment(colIdx, c);
+                const align = colAlignments[colIdx];
                 const alignClass = align === "right" ? "text-right" : align === "center" ? "text-center" : "text-left";
                 return (
                   <th
-                    key={c}
+                    key={colIdx}
                     onClick={() => handleSort(colIdx)}
                     className={cn(
-                      "cursor-pointer select-none px-4 py-3.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors",
+                      "cursor-pointer select-none px-4 py-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors min-w-[120px]",
                       alignClass
                     )}
                   >
-                    <span className={cn("inline-flex items-center gap-1.5", align === "right" ? "flex-row-reverse w-full" : align === "center" ? "justify-center w-full" : "")}>
-                      {c}
-                      <SortIcon colIdx={colIdx} />
-                    </span>
+                    <div className={cn(
+                      "flex items-center gap-1.5 w-full",
+                      align === "right" ? "justify-end" : align === "center" ? "justify-center" : "justify-start"
+                    )}>
+                      {align === "right" && <SortIcon colIdx={colIdx} />}
+                      <span className="truncate">{c}</span>
+                      {align !== "right" && <SortIcon colIdx={colIdx} />}
+                    </div>
                   </th>
                 );
               })}
@@ -220,13 +241,14 @@ export function ResultsTableCard({ payload, onDownloadTriggered }: { payload: Ap
                   className="border-t border-border transition-colors hover:bg-secondary/40"
                 >
                   {table.columns.map((c, colIdx) => {
-                    const { formatted, align } = formatValue(row[colIdx], c);
+                    const { formatted } = formatValue(row[colIdx], c, table.title);
+                    const align = colAlignments[colIdx];
                     const alignClass = align === "right" ? "text-right font-mono" : align === "center" ? "text-center" : "text-left";
                     return (
                       <td 
-                        key={c} 
+                        key={colIdx} 
                         className={cn(
-                          "px-4 py-3.5 text-[13px] text-foreground/90 border-t border-border/60",
+                          "px-4 py-1.5 text-[13px] text-foreground/90 border-t border-border/60",
                           alignClass
                         )}
                       >

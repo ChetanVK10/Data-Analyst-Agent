@@ -62,6 +62,23 @@ class ChartSpec(BaseModel):
     plotly_json: dict      = Field(..., description="Complete Plotly figure JSON (data + layout)")
 
 
+class VisualizationSpec(BaseModel):
+    """
+    Structured metadata returned by the LLM to specify what visualization to render.
+    """
+    is_appropriate: bool = Field(..., description="Whether a visualization is appropriate for this data")
+    chart_type: Optional[ChartType] = Field(None, description="The requested chart type")
+    x_column: Optional[str] = Field(None, description="The column to map to the X-axis")
+    y_column: Optional[str] = Field(None, description="The column to map to the Y-axis")
+    y_columns: Optional[List[str]] = Field(None, description="Optional list of Y-axis columns for multi-measure charts")
+    color_column: Optional[str] = Field(None, description="Optional column to group by color")
+    grouping: Optional[str] = Field(None, description="Optional aggregation or grouping needed")
+    title: Optional[str] = Field(None, description="Chart title shown above the plot")
+    x_axis_title: Optional[str] = Field(None, description="Custom X-axis title")
+    y_axis_title: Optional[str] = Field(None, description="Custom Y-axis title")
+    custom_code: Optional[str] = Field(None, description="Raw Plotly python code to execute if chart_type is OTHER")
+
+
 class Insight(BaseModel):
     """A single key finding extracted from the data."""
     title: str = Field(..., description="4-6 word summary of the insight")
@@ -104,6 +121,7 @@ class ReportSection(BaseModel):
     tables, charts, insights, recommendations.
     """
     title:             str                    = Field(..., description="Auto-generated report title")
+    report_type:       str                    = Field("SUCCESS", description="Indicates if this is a SUCCESS or FAILURE report")
     executive_summary: ExecutiveSummary
     tables:            List[TableResult]      = Field(default_factory=list)
     charts:            List[ChartSpec]        = Field(default_factory=list)
@@ -116,7 +134,8 @@ class DebugInfo(BaseModel):
     Developer/debug block.  Named 'debug' not 'technical' so it can grow
     to include prompt, tokens, latency breakdown, retry chain, etc.
     """
-    generated_sql:  Optional[str] = Field(None, description="Final SQL statement executed")
+    generated_code: Optional[str] = Field(None, description="Final SQL or Python statement executed")
+    execution_mode: Optional[str] = Field(None, description="SQL, PYTHON, or DETERMINISTIC")
     execution_plan: Optional[str] = Field(None, description="Planner steps as a readable string")
     llm_reasoning:  Optional[str] = Field(None, description="LLM explanation of its approach")
 
@@ -132,7 +151,7 @@ class AnalysisResponse(BaseModel):
     Single source of truth — no field is duplicated between sections.
     - Charts   → report.charts[].plotly_json  (not a separate chartJson)
     - Tables   → report.tables[].rows         (not a separate tableData)
-    - SQL      → debug.generated_sql          (not in report)
+    - Code     → debug.generated_code         (not in report)
     - Dataset  → dataset.*                    (self-contained, no extra call needed)
     """
     success: bool

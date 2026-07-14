@@ -18,6 +18,7 @@ from backend.agents.nodes.visualization_generator import visualization_generator
 from backend.agents.nodes.visualization_executor import visualization_executor_node
 from backend.agents.nodes.visualization_reflection import visualization_reflection_node
 from backend.agents.nodes.analysis_engine import analysis_engine_node
+from backend.agents.nodes.python_analyst import python_analyst_node
 
 logger = logging.getLogger(__name__)
 
@@ -60,6 +61,7 @@ def create_agent_graph(pool) -> Any:
     workflow.add_node("schema_profiler", schema_profiler_node)
     workflow.add_node("planner", planner_node)
     workflow.add_node("code_generator", code_generator_node)
+    workflow.add_node("python_analyst", python_analyst_node)
     workflow.add_node("sandbox_executor", sandbox_executor_node)
     workflow.add_node("validator", validator_node)
     workflow.add_node("reflection", reflection_node)
@@ -84,6 +86,9 @@ def create_agent_graph(pool) -> Any:
     workflow.add_edge("code_generator", "sandbox_executor")
     workflow.add_edge("sandbox_executor", "validator")
     workflow.add_edge("validator", "reflection")
+    
+    # Python Analysis Capability internal chain
+    workflow.add_edge("python_analyst", "sandbox_executor")
     
     # Visualization Capability internal chain
     workflow.add_edge("visualization_generator", "visualization_executor")

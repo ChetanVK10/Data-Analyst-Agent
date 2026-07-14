@@ -65,8 +65,9 @@ export function ReportActions({ payload }: ReportActionsProps) {
       lines.push('', '## Recommendations');
       r.recommendations.forEach((rec) => lines.push(`- **${rec.title}**: ${rec.body}`));
     }
-    if (payload.debug?.generated_sql) {
-      lines.push('', '## Executed SQL', '```sql', payload.debug.generated_sql, '```');
+    if (payload.debug?.generated_code) {
+      const isPython = payload.debug.execution_mode === 'PYTHON';
+      lines.push('', `## Executed ${isPython ? 'Python' : 'SQL'}`, `\`\`\`${isPython ? 'python' : 'sql'}`, payload.debug.generated_code, '```');
     }
     try {
       await navigator.clipboard.writeText(lines.filter(Boolean).join('\n'));

@@ -19,16 +19,13 @@ interface RightSidebarProps {
   isCollapsed: boolean;
   onToggleCollapse: () => void;
   isAnalyzing?: boolean;
-  onSuggestedQuestion?: (q: string) => void;
-  suggestedFollowUps?: string[];
-  lastQuestion?: string;
   latestReport?: any;
 }
 
 const friendlyLabels: Record<string, string> = {
   schema_profiler: "Understanding dataset",
   planner: "Planning analysis",
-  sql_generator: "Generating SQL",
+  sql_generator: "Generating",
   sandbox_executor: "Executing query",
   validator: "Validating results",
   report_agent: "Generating report"
@@ -37,7 +34,7 @@ const friendlyLabels: Record<string, string> = {
 const defaultSteps = [
   "Understanding dataset",
   "Planning analysis",
-  "Generating SQL",
+  "Generating",
   "Executing query",
   "Validating results",
   "Generating report",
@@ -53,9 +50,6 @@ export function RightSidebar({
   isCollapsed,
   onToggleCollapse,
   isAnalyzing,
-  onSuggestedQuestion,
-  suggestedFollowUps,
-  lastQuestion = "",
   latestReport,
 }: RightSidebarProps) {
   const [openStep, setOpenStep] = useState<number | null>(null);
@@ -75,40 +69,6 @@ export function RightSidebar({
   const scrollToTop = () => {
     scrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
   };
-
-  // Map contextual suggestions
-  let suggestions = ["Break down results by category", "Show top 10 by value", "What trends do you see?", "Compare across time periods"];
-  if (suggestedFollowUps && suggestedFollowUps.length > 0) {
-    suggestions = suggestedFollowUps;
-  } else if (lastQuestion) {
-    const questionLower = lastQuestion.toLowerCase();
-    if (questionLower.includes("customer")) {
-      suggestions = [
-        "Show top 10 customers",
-        "Revenue by country",
-        "Monthly sales trend",
-        "Customer contribution %",
-        "Average order value"
-      ];
-    } else if (questionLower.includes("sale") || questionLower.includes("monthly") || questionLower.includes("revenue")) {
-      suggestions = [
-        "Compare quarters",
-        "Best month",
-        "Worst month",
-        "Revenue by territory",
-        "Growth rate"
-      ];
-    } else if (questionLower.includes("order")) {
-      suggestions = [
-        "Average order value",
-        "Monthly sales trend",
-        "Sales by country",
-        "Orders by month",
-        "Top customers"
-      ];
-    }
-  }
-
   // Determine sequential stage progress and status
   let nextRunningIdx = -1;
   let lastExecutedIdx = -1;
@@ -320,28 +280,7 @@ export function RightSidebar({
               )}
             </div>
           </div>
-
-          {/* 3. Suggested follow-ups section (integrated inside main scrollbar) */}
-          <div className="pb-2">
-            <div className="glass-card rounded-2xl p-4">
-              <div className="text-xs font-semibold mb-3">Suggested follow-ups</div>
-              <div className="space-y-1.5">
-                {suggestions.map((s) => (
-                  <button
-                    key={s}
-                    onClick={() => onSuggestedQuestion?.(s)}
-                    disabled={isAnalyzing}
-                    className="w-full rounded-lg border border-border bg-background/40 px-3 py-2 text-left text-[11px] leading-snug text-muted-foreground transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed"
-                  >
-                    {s}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-          
         </div>
-
         {/* 4. Floating Scroll to Top button */}
         <button
           onClick={scrollToTop}

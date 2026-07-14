@@ -66,7 +66,7 @@ export function ChatComposer({ onSubmit, disabled, model }: ChatComposerProps) {
         <div className="flex items-center gap-1.5 pb-1 pr-1">
           <span className="hidden items-center gap-1 rounded-md border border-border px-1.5 py-1 text-[10px] text-muted-foreground sm:inline-flex">
             <Sparkles className="h-3 w-3 text-primary" />
-            {model || "Claude 3.5 Sonnet"}
+            {model || "llama-3.3-70b"}
           </span>
           <button
             type="submit"

@@ -1,7 +1,7 @@
 import json
 import logging
 from typing import Dict, Any
-from backend.agents.state import AgentState
+from backend.agents.state import AgentState, get_effective_question
 from backend.config import get_llm
 from langchain_core.messages import SystemMessage, HumanMessage
 
@@ -44,7 +44,7 @@ def planner_node(state: AgentState) -> Dict[str, Any]:
     
     logger.info(f"Node started: {node_name} (Retry count: {retry_count})")
     
-    question = state.get("question")
+    question = get_effective_question(state)
     schema_profile = state.get("schema_profile")
     table_name = state.get("duckdb_table") or state.get("dataset_id")
     retry_history = state.get("retry_history", [])
@@ -120,12 +120,28 @@ Columns:
             "approach": "sql",
             "expected_output_type": "dataframe"
         }
-        updates = {
-            "plan": fallback_plan,
-            "expected_output_type": "dataframe",
-            "generated_code": None,
-            "execution_success": False
-        }
+        error_str = error_msg.lower()
+        if "429" in error_str or "resource_exhausted" in error_str or "rate limit" in error_str:
+            logger.error("Provider chain exhausted due to rate limit. Skipping agent retry loop.")
+            updates = {
+                "plan": fallback_plan,
+                "expected_output_type": "dataframe",
+                "generated_code": None,
+                "execution_success": False,
+                "failure_summary": {
+                    "failure_type": "provider_error",
+                    "error_message": "Provider chain exhausted due to rate limit.",
+                    "code_context": "",
+                    "expected_vs_actual": error_msg
+                }
+            }
+        else:
+            updates = {
+                "plan": fallback_plan,
+                "expected_output_type": "dataframe",
+                "generated_code": None,
+                "execution_success": False
+            }
 
     # Record metrics
     end_time = time.time()

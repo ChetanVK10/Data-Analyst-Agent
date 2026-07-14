@@ -39,6 +39,12 @@ CAPABILITIES: Dict[str, CapabilityDefinition] = {
         description="Generates Python Plotly charts based on SQL query results.",
         enabled=True
     ),
+    "PYTHON_ANALYSIS": CapabilityDefinition(
+        name="PYTHON_ANALYSIS",
+        entry_node="python_analyst",
+        description="Executes complex calculations, rolling windows, regex text cleaning, and fuzzy matching via Python.",
+        enabled=True
+    ),
     "REPORT": CapabilityDefinition(
         name="REPORT",
         entry_node="report_agent",

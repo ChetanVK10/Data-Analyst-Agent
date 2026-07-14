@@ -22,6 +22,8 @@ class SupervisorDecision(TypedDict, total=False):
     reasoning: str           # Why the supervisor made this decision
     selected_capability: Optional[str] # E.g., 'SQL', 'VISUALIZATION', 'REPORT'
     timestamp: float         # When the decision was made
+    is_follow_up: Optional[bool] # Whether the question is a follow-up to the previous context
+    resolved_question: Optional[str] # The standalone resolved question if follow-up, or original question if new
 
 class AgentState(TypedDict):
     # Core Identification
@@ -32,6 +34,8 @@ class AgentState(TypedDict):
     # Metadata & Inputs
     schema_profile: Dict[str, Any]
     question: str
+    resolved_question: Optional[str]
+    conversational_context: Optional[Dict[str, Any]]
     
     # Execution Plan & Intermediates
     plan: Optional[Dict[str, Any]]
@@ -43,7 +47,8 @@ class AgentState(TypedDict):
     execution_time_ms: float
     output_summary: Optional[Dict[str, Any]] # e.g., {'columns': [...], 'row_count': 10, 'preview': [...]}
     
-    # Complete SQL query result (stored for Python visualization generator)
+    # Complete query result (stored for Python visualization generator)
+    # Includes: columns, dtypes, rows, row_count, analytical_roles
     query_result: Optional[Dict[str, Any]]
     
     # Validation & Routing
@@ -57,6 +62,7 @@ class AgentState(TypedDict):
     retry_history: List[FailureSummary]
     
     # Visualization specific routing & intermediates
+    vis_spec: Optional[Dict[str, Any]]
     vis_generated_code: Optional[str]
     vis_retry_count: int
     vis_retry_history: List[FailureSummary]
@@ -74,3 +80,10 @@ class AgentState(TypedDict):
     
     # Phase 3 Generic Analysis State
     analysis_artifacts: Optional[Dict[str, Any]]
+
+def get_effective_question(state: dict) -> str:
+    """Returns the resolved standalone question if available, otherwise the original question."""
+    resolved = state.get("resolved_question")
+    if resolved and str(resolved).strip():
+        return str(resolved).strip()
+    return str(state.get("question", "")).strip()

@@ -21,6 +21,7 @@ export interface Recommendation { title: string; body: string; }
 
 export interface ReportSection {
   title: string;
+  report_type?: 'SUCCESS' | 'FAILURE';
   executive_summary: ExecutiveSummary;
   tables: TableResult[];
   charts: ChartSpec[];
@@ -29,7 +30,8 @@ export interface ReportSection {
 }
 
 export interface DebugInfo {
-  generated_sql: string | null;
+  generated_code: string | null;
+  execution_mode: 'SQL' | 'PYTHON' | 'DETERMINISTIC' | null;
   execution_plan: string | null;
   llm_reasoning: string | null;
 }

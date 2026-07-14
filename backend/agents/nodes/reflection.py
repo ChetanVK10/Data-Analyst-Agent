@@ -62,15 +62,34 @@ def reflection_node(state: AgentState) -> Dict[str, Any]:
 
         failure_type = failure_summary.get("failure_type")
         
-        logger.info(f"Retrying SQL capability. Attempt {new_retry_count}/3. Failure type '{failure_type}'")
-        status = "failed"
-        error_msg = failure_summary.get("error_message")
-        routing_hint = "SQL"
-        updates = {
-            "retry_count": new_retry_count,
-            "retry_history": retry_history,
-            "graceful_failure": False
-        }
+        if failure_type == "provider_error":
+            logger.warning("Provider chain exhausted due to rate limit. Skipping agent retry loop.")
+            status = "failed"
+            error_msg = failure_summary.get("error_message")
+            routing_hint = "REPORT"
+            updates = {
+                "graceful_failure": True,
+                "retry_history": retry_history
+            }
+        else:
+            approach = state.get("plan", {}).get("approach", "sql")
+            
+            if approach == "python":
+                logger.info(f"Retrying Python Analysis capability. Attempt {new_retry_count}/3. Failure type '{failure_type}'")
+                status = "failed"
+                error_msg = failure_summary.get("error_message")
+                routing_hint = "PYTHON_ANALYSIS"
+            else:
+                logger.info(f"Retrying SQL capability. Attempt {new_retry_count}/3. Failure type '{failure_type}'")
+                status = "failed"
+                error_msg = failure_summary.get("error_message")
+                routing_hint = "SQL"
+                
+            updates = {
+                "retry_count": new_retry_count,
+                "retry_history": retry_history,
+                "graceful_failure": False
+            }
 
     # Record metrics
     end_time = time.time()
@@ -91,11 +110,14 @@ def reflection_node(state: AgentState) -> Dict[str, Any]:
     execution_metadata.append(node_metadata)
     updates["execution_metadata"] = execution_metadata
     
+    approach = state.get("plan", {}).get("approach", "sql")
+    worker_name = "PYTHON_ANALYSIS" if approach == "python" else "SQL"
+    
     worker_result = {
-        "worker_name": "SQL",
+        "worker_name": worker_name,
         "status": status,
         "confidence": 1.0 if status == "success" else 0.0,
-        "summary": error_msg if error_msg else "SQL capability completed successfully.",
+        "summary": error_msg if error_msg else f"{worker_name} capability completed successfully.",
         "routing_hint": routing_hint,
         "duration_ms": duration_ms
     }

@@ -104,6 +104,16 @@ def run_python_in_sandbox(session_id: str, dataset_id: str, code: str) -> Tuple[
             outputs["pdf_path"] = pdf_path
             logger.info("Found generated report.pdf in sandbox.")
 
+        result_path = os.path.join(session_dir, "result.json")
+        if os.path.exists(result_path):
+            try:
+                with open(result_path, "r", encoding="utf-8") as f:
+                    outputs["result_data"] = json.load(f).get("result")
+                logger.info("Found generated result.json in sandbox.")
+            except Exception as e:
+                logger.error(f"Failed to read result.json from sandbox: {e}")
+                return False, f"Generated result.json was malformed: {e}", {}
+
         return True, "", outputs
 
     except subprocess.TimeoutExpired:

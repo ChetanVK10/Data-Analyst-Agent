@@ -29,7 +29,17 @@ def schema_profiler_node(state: AgentState) -> Dict[str, Any]:
     else:
         logger.info(f"Profiling schema for session {session_id}, dataset {dataset_id}...")
         try:
-            profile = get_schema(session_id, dataset_id)
+            # Attempt MCP tool invocation first
+            from backend.mcp.client import invoke_mcp_tool_sync
+            mcp_result = invoke_mcp_tool_sync("get_dataset_schema", {"session_id": session_id, "dataset_id": dataset_id})
+            
+            if mcp_result is not None and not mcp_result.get("error"):
+                profile = mcp_result
+                logger.info("Successfully fetched schema via MCP tool boundary.")
+            else:
+                logger.warning(f"MCP tool get_dataset_schema returned invalid result or failed. Fallback to internal. Result: {mcp_result}")
+                profile = get_schema(session_id, dataset_id)
+
             logger.info(f"Schema profiled successfully. Columns: {[c['name'] for c in profile['columns']]}, Rows: {profile['row_count']}")
             updates["schema_profile"] = profile
         except Exception as e:

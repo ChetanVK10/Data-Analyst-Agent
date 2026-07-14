@@ -1,7 +1,7 @@
 import json
 import logging
 from typing import Dict, Any
-from backend.agents.state import AgentState
+from backend.agents.state import AgentState, get_effective_question
 from backend.config import get_llm
 from langchain_core.messages import SystemMessage, HumanMessage
 
@@ -73,7 +73,7 @@ def code_generator_node(state: AgentState) -> Dict[str, Any]:
     
     logger.info(f"Node started: {node_name} (Retry count: {retry_count})")
     
-    question = state.get("question")
+    question = get_effective_question(state)
     schema_profile = state.get("schema_profile")
     plan = state.get("plan") or {}
     dataset_id = state.get("dataset_id")
@@ -143,6 +143,33 @@ def code_generator_node(state: AgentState) -> Dict[str, Any]:
         logger.error(f"Error in Code Generator Node: {e}")
         status = "failed"
         error_msg = str(e)
+        error_str = error_msg.lower()
+        if "429" in error_str or "resource_exhausted" in error_str or "rate limit" in error_str:
+            logger.error("Provider chain exhausted due to rate limit. Skipping agent retry loop.")
+            # Record metrics here since we are returning early
+            end_time = time.time()
+            duration_ms = (end_time - start_time) * 1000
+            node_metadata = {
+                "node_name": node_name,
+                "start_time": start_time,
+                "end_time": end_time,
+                "duration_ms": duration_ms,
+                "status": status,
+                "retry_count": retry_count,
+                "error_message": error_msg
+            }
+            execution_metadata = list(state.get("execution_metadata") or [])
+            execution_metadata.append(node_metadata)
+            return {
+                "generated_code": generated_code,
+                "execution_metadata": execution_metadata,
+                "failure_summary": {
+                    "failure_type": "provider_error",
+                    "error_message": "Provider chain exhausted due to rate limit.",
+                    "code_context": "",
+                    "expected_vs_actual": error_msg
+                }
+            }
 
     # Record metrics
     end_time = time.time()

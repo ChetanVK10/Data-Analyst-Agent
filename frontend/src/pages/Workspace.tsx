@@ -198,25 +198,8 @@ export const Workspace: React.FC<WorkspaceProps> = ({
                       <div className="space-y-2">
                         <h3 className="text-lg font-semibold tracking-tight text-foreground">Start exploring your data</h3>
                         <p className="text-sm text-muted-foreground leading-relaxed">
-                          Ask questions or click on one of the suggested prompts below to discover insights in your dataset.
+                          Ask questions to discover insights in your dataset.
                         </p>
-                      </div>
-                      <div className="w-full rounded-2xl border border-border bg-card/50 p-4 text-left space-y-2.5">
-                        <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Try asking:</div>
-                        <ul className="space-y-2 text-xs font-medium text-foreground/80">
-                          <li className="flex items-center gap-2 cursor-pointer hover:text-primary transition-colors" onClick={() => setQuestion("Show total revenue")}>
-                            <span className="text-primary">•</span> Show total revenue
-                          </li>
-                          <li className="flex items-center gap-2 cursor-pointer hover:text-primary transition-colors" onClick={() => setQuestion("Top customers")}>
-                            <span className="text-primary">•</span> Top customers
-                          </li>
-                          <li className="flex items-center gap-2 cursor-pointer hover:text-primary transition-colors" onClick={() => setQuestion("Monthly sales trend")}>
-                            <span className="text-primary">•</span> Monthly sales trend
-                          </li>
-                          <li className="flex items-center gap-2 cursor-pointer hover:text-primary transition-colors" onClick={() => setQuestion("Revenue by country")}>
-                            <span className="text-primary">•</span> Revenue by country
-                          </li>
-                        </ul>
                       </div>
                     </div>
                   )}
@@ -249,7 +232,7 @@ export const Workspace: React.FC<WorkspaceProps> = ({
                             {sidebarTrace.find(t => t.status === "running")?.step 
                               ? (sidebarTrace.find(t => t.status === "running")?.step === "Understanding dataset" ? "Understanding your dataset..." :
                                  sidebarTrace.find(t => t.status === "running")?.step === "Planning analysis" ? "Planning the analysis..." :
-                                 sidebarTrace.find(t => t.status === "running")?.step === "Generating SQL" ? "Generating SQL..." :
+                                 sidebarTrace.find(t => t.status === "running")?.step === "Generating" ? "Generating..." :
                                  sidebarTrace.find(t => t.status === "running")?.step === "Executing query" ? "Executing query..." :
                                  sidebarTrace.find(t => t.status === "running")?.step === "Validating results" ? "Validating results..." :
                                  sidebarTrace.find(t => t.status === "running")?.step === "Generating report" ? "Preparing report..." : "Analyzing...")
@@ -295,8 +278,6 @@ export const Workspace: React.FC<WorkspaceProps> = ({
           isCollapsed={isRightSidebarCollapsed}
           onToggleCollapse={onToggleRightSidebar}
           isAnalyzing={isAnalyzing}
-          onSuggestedQuestion={handleSubmitQuestion}
-          lastQuestion={[...chatHistory].reverse().find(m => m.role === 'user')?.content || ""}
           latestReport={latestAssistantMsg?.report}
         />
       )}

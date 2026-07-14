@@ -23,6 +23,7 @@ from backend.database.repository import (
 )
 from backend.services.session_manager import session_manager
 from backend.agents.graph import create_agent_graph
+from backend.utils.json_sanitizer import sanitize_for_json
 
 # Configure logs
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
@@ -263,7 +264,7 @@ async def analyze_data(request: AnalyzeRequest):
                    "provider", "model", "retry_count" },
       "report":  { "title", "executive_summary", "tables", "charts",
                    "insights", "recommendations" },
-      "debug":   { "generated_sql", "execution_plan", "llm_reasoning" }
+      "debug":   { "generated_code", "execution_mode", "execution_plan", "llm_reasoning" }
     }
     """
     session_id = request.session_id
@@ -276,22 +277,62 @@ async def analyze_data(request: AnalyzeRequest):
     dataset_id = session_record["dataset_id"]
     config     = {"configurable": {"thread_id": session_id}}
 
+    # Retrieve existing state to preserve schema profile for the same dataset
+    existing_schema = {}
+    try:
+        existing_state = agent_graph.get_state(config)
+        if existing_state and isinstance(existing_state.values, dict):
+            old_schema = existing_state.values.get("schema_profile")
+            if isinstance(old_schema, dict) and old_schema.get("dataset_id") == dataset_id:
+                existing_schema = old_schema
+    except Exception as e:
+        logger.warning(f"Failed to retrieve existing schema state: {e}")
+
     initial_state = {
+        # Session Persistent
         "session_id":        session_id,
         "dataset_id":        dataset_id,
         "duckdb_table":      dataset_id,
-        "schema_profile":    {},
+        
+        # Run-Transient (Inputs & Metadata)
+        "schema_profile":    existing_schema,
         "question":          question,
-        "retry_count":       0,
-        "retry_history":     [],
-        "graceful_failure":  False,
+        "resolved_question": None,
+        
+        # Run-Transient (Execution Plan & Intermediates)
+        "plan":              {},
+        "generated_code":    "",
+        "expected_output_type": "",
+        
+        # Run-Transient (Outputs)
+        "execution_success": False,
+        "execution_time_ms": 0.0,
+        "output_summary":    {},
+        "query_result":      {},
+        
+        # Run-Transient (Validation & Routing)
         "validation_passed": False,
-        "query_result":      None,
-        "vis_generated_code": None,
+        "failure_summary":   None,
+        "retry_count":       0,
+        "retry_target":      "",
+        "graceful_failure":  False,
+        "retry_history":     [],
+        
+        # Run-Transient (Visualization)
+        "vis_spec":          {},
+        "vis_generated_code": "",
         "vis_retry_count":   0,
         "vis_retry_history": [],
-        "final_report":      None,
+        
+        # Run-Transient (Final Outputs & Observability)
+        "final_report":      {},
         "execution_metadata": [],
+        
+        # Run-Transient (Phase 2 & 3 Generic State)
+        "last_worker_result": {},
+        "supervisor_history": [],
+        "overall_confidence": 0.0,
+        "analysis_artifacts": {},
     }
 
     logger.info(f"LangGraph execution start — session={session_id}")
@@ -365,11 +406,15 @@ async def analyze_data(request: AnalyzeRequest):
                 "recommendations":   [],
             }),
             "debug": final_report.get("debug", {
-                "generated_sql":  None,
+                "generated_code":  None,
+                "execution_mode":  None,
                 "execution_plan": None,
                 "llm_reasoning":  None,
             }),
         }
+
+        # Sanitize response to prevent JSON serialization crashes on NaNs/Infs
+        response_body = sanitize_for_json(response_body)
 
         return response_body
 

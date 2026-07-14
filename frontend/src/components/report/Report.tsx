@@ -65,7 +65,7 @@ export function Report({ payload }: { payload: AppReportPayload }) {
       )}
 
       {/* SQL viewer — collapsed by default */}
-      {payload.debug?.generated_sql && (
+      {payload.debug?.generated_code && (
         <DelayedCard delay={400}>
           <SQLViewer payload={payload} />
         </DelayedCard>

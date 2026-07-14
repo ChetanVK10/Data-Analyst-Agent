@@ -7,9 +7,15 @@ export function SQLViewer({ payload }: { payload: AppReportPayload }) {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  const isPython = payload.debug?.execution_mode === 'PYTHON';
+  const label = isPython ? 'Executed Python' : 'Executed SQL';
+  const desc = isPython ? 'The exact Python analysis code the agent ran' : 'The exact query the agent ran';
+  const filename = isPython ? 'script.py' : 'query.sql';
+  const codeText = payload.debug?.generated_code || '';
+
   const copy = async () => {
-    if (payload.debug?.generated_sql) {
-      await navigator.clipboard.writeText(payload.debug.generated_sql);
+    if (codeText) {
+      await navigator.clipboard.writeText(codeText);
     }
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
@@ -26,8 +32,8 @@ export function SQLViewer({ payload }: { payload: AppReportPayload }) {
             <Terminal className="h-4 w-4" />
           </div>
           <div>
-            <div className="text-sm font-semibold">Executed SQL</div>
-            <div className="text-[11px] text-muted-foreground">The exact query the agent ran</div>
+            <div className="text-sm font-semibold">{label}</div>
+            <div className="text-[11px] text-muted-foreground">{desc}</div>
           </div>
         </div>
         <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", open && "rotate-180")} />
@@ -35,7 +41,7 @@ export function SQLViewer({ payload }: { payload: AppReportPayload }) {
       {open && (
         <div className="border-t border-border animate-fade-in">
           <div className="flex items-center justify-between border-b border-border bg-background/40 px-4 py-2 text-[11px] text-muted-foreground">
-            <span className="font-mono">query.sql</span>
+            <span className="font-mono">{filename}</span>
             <button
               onClick={copy}
               className="inline-flex items-center gap-1.5 rounded-md border border-border px-2 py-1 text-[11px] hover:border-primary/40 hover:text-foreground"
@@ -45,7 +51,7 @@ export function SQLViewer({ payload }: { payload: AppReportPayload }) {
             </button>
           </div>
           <pre className="scrollbar-thin max-h-96 overflow-auto px-5 py-4 text-xs leading-relaxed">
-            <code className="font-mono text-foreground/90">{highlight(payload.debug?.generated_sql || '')}</code>
+            <code className="font-mono text-foreground/90">{isPython ? codeText : highlight(codeText)}</code>
           </pre>
         </div>
       )}

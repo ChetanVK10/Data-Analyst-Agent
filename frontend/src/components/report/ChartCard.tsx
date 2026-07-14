@@ -23,7 +23,7 @@ export function ChartCard({ chart, chartId }: { chart: ChartSpec; chartId: strin
         </button>
       }
     >
-      <div className="h-[320px] w-full mt-4 rounded-xl overflow-hidden border border-border bg-background/20 relative z-0">
+      <div className="w-full mt-4 rounded-xl overflow-hidden border border-border bg-background/20 relative z-0 min-h-[450px]">
         <PlotlyChart chartData={chart.plotly_json} chartId={chartId} />
       </div>
     </ReportCard>
