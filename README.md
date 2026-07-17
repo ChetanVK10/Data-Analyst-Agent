@@ -30,7 +30,6 @@ It combines **LLM reasoning**, **deterministic execution**, **safe code validati
 
 Follow the complete workflow from uploading a dataset to receiving validated insights, visualizations, generated SQL, and execution analytics.
 
----
 
 ## 1️⃣ Dataset Upload
 
@@ -191,41 +190,15 @@ graph TD
 
 ## 🔄 Agent Workflow
 
-When a user submits a question, the system follows this execution pipeline:
+Each request follows a structured execution pipeline:
 
-```text
-User Question
-      │
-      ▼
-Load Previous Session (LangGraph Checkpoint)
-      │
-      ▼
-Supervisor Router
-      │
-      ▼
-Schema Profiling
-      │
-      ▼
-Planning
-      │
-      ▼
-SQL / Python Generation
-      │
-      ▼
-Validation & Safe Execution
-      │
-      ▼
-Reflection & Retry (if needed)
-      │
-      ▼
-Visualization Generation
-      │
-      ▼
-Grounded Report Generation
-      │
-      ▼
-Save Session & Return Results
-```
+1. User uploads a dataset and asks a question.
+2. The Supervisor selects the required capability.
+3. SQL/Python is generated and validated.
+4. DuckDB executes the analysis.
+5. Results are verified.
+6. Charts and reports are generated.
+7. Session state is saved for future conversations.
 
 ---
 
