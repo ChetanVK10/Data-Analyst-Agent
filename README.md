@@ -1,6 +1,6 @@
 <div align="center">
 
-# DataAgent Pro
+#  🤖 DataAgent Pro
 
 ### Stateful Multi-Agent Data Analysis with LangGraph
 
@@ -26,27 +26,25 @@ It combines **LLM reasoning**, **deterministic execution**, **safe code validati
 
 ---
 
-# 📸 Product Preview & Screenshots
+# 📸 Product Preview
 
-Follow the complete workflow from uploading a dataset to receiving validated insights, visualizations, generated SQL, and execution analytics.
+The following screenshots demonstrate the complete workflow—from dataset upload and conversational analysis to validated results, interactive visualizations, generated SQL, and execution analytics.
 
 
 ## 1️⃣ Dataset Upload
 
-Upload a CSV dataset to begin a new analysis session. The agent automatically profiles the dataset and prepares it for downstream analytical tasks.
-
+Upload a CSV dataset to start a new analysis session. The agent automatically profiles the dataset, identifies its schema, and prepares it for downstream analytical tasks.
 <p align="center">
-  <img src="./screenshots/Dataset Uploading Page.png" width="100%">
+  <img src="./screenshots/Dataset Uploading Page.png" width="90%">
 </p>
 
 ---
 
 ## 2️⃣ Main Analysis Workspace
 
-The primary workspace where users ask analytical questions in natural language. The system generates an executive summary, executes SQL/Python, validates results, and displays the execution pipeline in real time.
-
+The primary workspace where users ask analytical questions in natural language. The agent plans the workflow, generates SQL or Python when required, validates execution, and presents grounded analytical results in real time.
 <p align="center">
-  <img src="./screenshots/Main Workspace.png" width="100%">
+  <img src="./screenshots/Main Workspace.png" width="90%">
 </p>
 
 ---
@@ -61,7 +59,7 @@ A complete analytical report including:
 - Statistical Insights
 
 <p align="center">
-  <img src="./screenshots/q1.jpg" width="100%">
+  <img src="./screenshots/q1.jpg" width="90%">
 </p>
 
 ---
@@ -77,7 +75,7 @@ Example:
 The system automatically understands the previous analytical context.
 
 <p align="center">
-  <img src="./screenshots/q2.png" width="100%">
+  <img src="./screenshots/q2.png" width="90%">
 </p>
 
 ---
@@ -96,7 +94,7 @@ The agent exposes:
 allowing users to inspect exactly how every answer was produced.
 
 <p align="center">
-  <img src="./screenshots/Q 4.2.png" width="100%">
+  <img src="./screenshots/Q 4.2.png" width="90%">
 </p>
 
 ---
@@ -106,7 +104,7 @@ allowing users to inspect exactly how every answer was produced.
 The built-in analytics dashboard tracks system performance, execution latency, retry rates, recovery statistics, and historical execution metrics for monitoring agent behavior.
 
 <p align="center">
-  <img src="./screenshots/Analystics.png" width="100%">
+  <img src="./screenshots/Analystics.png" width="90%">
 </p>
 
 ---
@@ -133,6 +131,7 @@ Many AI data analysis tools primarily generate SQL or Python using an LLM and re
 - **LangGraph Supervisor** – Routes requests to specialized workers for modular execution.
 - **Persistent Memory** – PostgreSQL checkpoints preserve conversation state across sessions.
 - **Safe Code Execution** – SQL validation and Python AST checks improve reliability and security.
+- **MCP Tool Integration** – Analytical capabilities are exposed through Model Context Protocol with automatic fallback to local implementations.
 - **Grounded AI Reports** – The LLM explains deterministic results instead of generating numbers.
 - **Session Isolation** – Each analysis runs in an independent DuckDB session with automatic cleanup.
 
@@ -143,8 +142,9 @@ Many AI data analysis tools primarily generate SQL or Python using an LLM and re
 DataAgent Pro follows a **stateful multi-agent architecture** built with **LangGraph**. A central Supervisor coordinates specialized workers for planning, execution, validation, visualization, and reporting, while PostgreSQL preserves workflow state across sessions.
 
 <p align="center">
-  <img src="./screenshots/System Architecture.png" alt="System Architecture" width="100%">
+  <img src="./screenshots/System Architecture.png" alt="System Architecture" width="90%">
 </p>
+
 ---
 
 ## 🔁 Validation, Reflection & Retry Loop
@@ -152,28 +152,11 @@ DataAgent Pro follows a **stateful multi-agent architecture** built with **LangG
 Every generated SQL or Python script is validated before execution. If validation fails or the results are unreliable, the system automatically reflects on the failure, regenerates the query, and retries execution. After the retry limit is reached, it returns a structured failure report instead of an incorrect response.
 
 <p align="center">
-  <img src="./screenshots/Validation.png" alt="Validation Reflection Retry Loop" width="100%">
+  <img src="./screenshots/Validation.png" alt="Validation Reflection Retry Loop" width="90%">
 </p>
 
 ---
 
-## ⚖️ LLM vs. Deterministic Execution
-
-DataAgent Pro uses a hybrid approach where **LLMs handle reasoning** while **deterministic code performs calculations and validation**. This ensures reliable analytical results and reduces hallucinations.
-
-| Component | Execution | Responsibility |
-| :--- | :--- | :--- |
-| **Supervisor** | Hybrid | Routes requests to the appropriate workflow. |
-| **Planner** | LLM | Creates the analysis plan. |
-| **SQL / Python Generator** | LLM | Generates SQL queries or Python code. |
-| **Validation Layer** | Deterministic | Validates SQL structure and Python safety. |
-| **Data Engine** | Deterministic | Executes queries using DuckDB and Pandas. |
-| **Statistics Engine** | Deterministic | Computes aggregations, correlations, and outliers. |
-| **Visualization Engine** | Deterministic | Generates Plotly charts from validated results. |
-| **Report Generator** | Hybrid | Uses deterministic facts and an LLM to generate natural language summaries. |
-| **Failure Handler** | Deterministic | Creates diagnostic reports and manages retry logic. |
-
----
 
 ## 🔌 Model Context Protocol (MCP)
 
