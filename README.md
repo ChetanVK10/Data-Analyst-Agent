@@ -143,7 +143,7 @@ Many AI data analysis tools primarily generate SQL or Python using an LLM and re
 DataAgent Pro follows a **stateful multi-agent architecture** built with **LangGraph**. A central Supervisor coordinates specialized workers for planning, execution, validation, visualization, and reporting, while PostgreSQL preserves workflow state across sessions.
 
 <p align="center">
-  <img src="./screenshots/Architecture.png" alt="System Architecture" width="100%">
+  <img src="./screenshots/System Architecture.png" alt="System Architecture" width="100%">
 </p>
 ---
 
