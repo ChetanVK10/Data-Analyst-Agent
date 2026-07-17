@@ -147,23 +147,9 @@ DataAgent Pro follows a **stateful multi-agent architecture** built with **LangG
 </p>
 ---
 
-## 🔄 Agent Workflow
-
-Each request follows a structured execution pipeline:
-
-1. User uploads a dataset and asks a question.
-2. The Supervisor selects the required capability.
-3. SQL/Python is generated and validated.
-4. DuckDB executes the analysis.
-5. Results are verified.
-6. Charts and reports are generated.
-7. Session state is saved for future conversations.
-
----
-
 ## 🔁 Validation, Reflection & Retry Loop
 
-Before returning a response, generated SQL and Python code are automatically validated. If validation fails or the results are unreliable, the agent reflects on the failure, regenerates the query using validator feedback, and retries execution. After the maximum retry limit is reached, the system returns a structured failure report instead of an incorrect response.
+Every generated SQL or Python script is validated before execution. If validation fails or the results are unreliable, the system automatically reflects on the failure, regenerates the query, and retries execution. After the retry limit is reached, it returns a structured failure report instead of an incorrect response.
 
 <p align="center">
   <img src="./screenshots/Validation.png" alt="Validation Reflection Retry Loop" width="100%">
