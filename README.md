@@ -1,26 +1,33 @@
 <div align="center">
 
-#  🤖 DataAgent Pro
+# 🤖 DataAgent Pro
 
 ### Stateful Multi-Agent Data Analysis with LangGraph
 
-[![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=flat&logo=python&logoColor=white)](#)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-009688?style=flat&logo=fastapi&logoColor=white)](#)
-[![LangGraph](https://img.shields.io/badge/LangGraph-0.0.10+-000000?style=flat&logo=chainlink&logoColor=white)](#)
-[![React](https://img.shields.io/badge/React-18.0+-61DAFB?style=flat&logo=react&logoColor=white)](#)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178C6?style=flat&logo=typescript&logoColor=white)](#)
-[![DuckDB](https://img.shields.io/badge/DuckDB-0.9.0+-FFF000?style=flat&logo=duckdb&logoColor=black)](#)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16--alpine-4169E1?style=flat&logo=postgresql&logoColor=white)](#)
-[![MCP](https://img.shields.io/badge/Model%20Context%20Protocol-1.0+-FF4500?style=flat)](#)
-[![Plotly](https://img.shields.io/badge/Plotly-5.15+-3F4F75?style=flat&logo=plotly&logoColor=white)](#)
+> **An Agentic AI Data Analysis System for Reliable Analytical Workflows**
 
-<p align="center" width="80%">
+Analyze CSV datasets using natural language through a **stateful LangGraph workflow** that combines **LLM reasoning**, **deterministic execution**, **safe validation**, and **interactive visualizations**.
 
-**DataAgent Pro** is a **stateful agentic data analysis system** built with **LangGraph** that plans, executes, validates, and explains SQL and Python analytical workflows.
+Generate grounded analytical insights with validated SQL, Python execution, and persistent conversational memory.
 
-It combines **LLM reasoning**, **deterministic execution**, **safe code validation**, and **interactive visualizations** to deliver reliable, grounded analytical insights.
+<br>
 
-</p>
+![Python](https://img.shields.io/badge/PYTHON-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FASTAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)
+![React](https://img.shields.io/badge/REACT-61DAFB?style=for-the-badge&logo=react&logoColor=black)
+![TypeScript](https://img.shields.io/badge/TYPESCRIPT-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
+![LangGraph](https://img.shields.io/badge/LANGGRAPH-000000?style=for-the-badge)
+![AGENTIC AI](https://img.shields.io/badge/AGENTIC_AI-8A2BE2?style=for-the-badge)
+![DuckDB](https://img.shields.io/badge/DUCKDB-FFF000?style=for-the-badge&logo=duckdb&logoColor=black)
+![PostgreSQL](https://img.shields.io/badge/POSTGRESQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
+
+<br>
+
+![Plotly](https://img.shields.io/badge/PLOTLY-3F4F75?style=for-the-badge&logo=plotly&logoColor=white)
+![MCP](https://img.shields.io/badge/MCP-FF6B35?style=for-the-badge)
+![DuckDB](https://img.shields.io/badge/SQL-DUCKDB-FACC15?style=for-the-badge)
+![Docker](https://img.shields.io/badge/DOCKER-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![MIT](https://img.shields.io/badge/LICENSE-MIT-97CA00?style=for-the-badge)
 
 </div>
 
