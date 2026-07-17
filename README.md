@@ -29,7 +29,7 @@ Follow the complete workflow from uploading a dataset to receiving validated ins
 Upload a CSV dataset to begin a new analysis session. The agent automatically profiles the dataset and prepares it for downstream analytical tasks.
 
 <p align="center">
-  <img src="docs/screenshots/Dataset Uploading Page.png" width="100%">
+  <img src="./screenshots/Dataset Uploading Page.png" width="100%">
 </p>
 
 ---
@@ -39,7 +39,7 @@ Upload a CSV dataset to begin a new analysis session. The agent automatically pr
 The primary workspace where users ask analytical questions in natural language. The system generates an executive summary, executes SQL/Python, validates results, and displays the execution pipeline in real time.
 
 <p align="center">
-  <img src="docs/screenshots/Main Workspace.png" width="100%">
+  <img src="./screenshots/Main Workspace.png" width="100%">
 </p>
 
 ---
@@ -54,7 +54,7 @@ A complete analytical report including:
 - Statistical Insights
 
 <p align="center">
-  <img src="docs/screenshots/q1.jpg" width="100%">
+  <img src="./screenshots/q1.jpg" width="100%">
 </p>
 
 ---
@@ -70,7 +70,7 @@ Example:
 The system automatically understands the previous analytical context.
 
 <p align="center">
-  <img src="docs/screenshots/q2.png" width="100%">
+  <img src="./screenshots/q2.png" width="100%">
 </p>
 
 ---
@@ -89,7 +89,7 @@ The agent exposes:
 allowing users to inspect exactly how every answer was produced.
 
 <p align="center">
-  <img src="docs/screenshots/Q 4.2.png" width="100%">
+  <img src="./screenshots/Q 4.2.png" width="100%">
 </p>
 
 ---
@@ -99,7 +99,7 @@ allowing users to inspect exactly how every answer was produced.
 The built-in analytics dashboard tracks system performance, execution latency, retry rates, recovery statistics, and historical execution metrics for monitoring agent behavior.
 
 <p align="center">
-  <img src="docs/screenshots/Analystics.png" width="100%">
+  <img src="./screenshots/Analystics.png" width="100%">
 </p>
 
 ---
