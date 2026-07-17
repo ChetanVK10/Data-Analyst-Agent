@@ -158,21 +158,6 @@ Every generated SQL or Python script is validated before execution. If validatio
 ---
 
 
-## 🔌 Model Context Protocol (MCP)
-
-The project uses **Model Context Protocol (MCP)** to separate the LangGraph workflow from external tools. Instead of calling utility functions directly, the agent communicates with an MCP server that provides reusable analytical tools.
-
-### MCP Tools
-
-- Dataset schema profiling
-- Correlation analysis
-- Outlier detection
-- Chart recommendation
-
-If the MCP server is unavailable, the system automatically falls back to local deterministic implementations to ensure uninterrupted execution.
-
----
-
 ## 🛡️ Safe Execution
 
 Generated SQL and Python code are validated before execution.
@@ -300,13 +285,6 @@ Open:
 
 ---
 
-## 🚀 Future Improvements
-
-- Container-based code execution.
-- Support for external databases (PostgreSQL, Snowflake, BigQuery).
-- Token usage and cost monitoring.
-
----
 
 ## ⭐ Key Takeaways
 
