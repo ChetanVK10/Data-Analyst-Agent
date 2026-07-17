@@ -16,32 +16,91 @@ DataAgent Pro is a **stateful agentic data analysis system** that plans, execute
 
 ---
 
-## 📸 Product Preview & Screenshots
+---
 
-*Note: The following screenshot files must be captured manually and placed under `docs/screenshots/`.*
+# 📸 Product Preview & Screenshots
 
-### A. Main Analysis Workspace
-* **Command Executed:** `"Show the top 7 customers by total sales"`
-* **Demonstrates:** Dynamic SQL planning, aggregation, and Plotly visualization.
-* **Path:** `docs/screenshots/01_analysis_report.png`
+Follow the complete workflow from uploading a dataset to receiving validated insights, visualizations, generated SQL, and execution analytics.
 
-### B. Conversational Follow-Up
-* **Command Executed:** `"Show only the top 3"`
-* **Demonstrates:** Persistent checkpoint restoration and follow-up intent resolution.
-* **Path:** `docs/screenshots/02_followup_analysis.png`
+---
 
-### C. Chronological / Time-Series Analysis
-* **Command Executed:** `"Show monthly total sales over time"`
-* **Demonstrates:** Temporal aggregation and chronological trend detection.
-* **Path:** `docs/screenshots/03_timeseries_analysis.png`
+## 1️⃣ Dataset Upload
 
-### E. Telemetry & Analytics Dashboard
-* **Demonstrates:** Daily execution volumes, success metrics, and error breakdowns.
-* **Path:** `docs/screenshots/04_analytics_dashboard.png`
+Upload a CSV dataset to begin a new analysis session. The agent automatically profiles the dataset and prepares it for downstream analytical tasks.
 
-### F. Developer Debug & Execution Trace
-* **Demonstrates:** Detailed node transition timeline and raw generated SQL visibility.
-* **Path:** `docs/screenshots/05_execution_trace.png`
+<p align="center">
+  <img src="docs/screenshots/Dataset Uploading Page.png" width="100%">
+</p>
+
+---
+
+## 2️⃣ Main Analysis Workspace
+
+The primary workspace where users ask analytical questions in natural language. The system generates an executive summary, executes SQL/Python, validates results, and displays the execution pipeline in real time.
+
+<p align="center">
+  <img src="docs/screenshots/Main Workspace.png" width="100%">
+</p>
+
+---
+
+## 3️⃣ Example Analysis — Monthly Sales Trend
+
+A complete analytical report including:
+
+- Executive Summary
+- Query Results
+- Interactive Visualization
+- Statistical Insights
+
+<p align="center">
+  <img src="docs/screenshots/q1.jpg" width="100%">
+</p>
+
+---
+
+## 4️⃣ Conversational Follow-up Analysis
+
+The agent maintains conversation state using LangGraph checkpointing, allowing follow-up questions without re-uploading the dataset.
+
+Example:
+
+> "Show the top 3"
+
+The system automatically understands the previous analytical context.
+
+<p align="center">
+  <img src="docs/screenshots/q2.png" width="100%">
+</p>
+
+---
+
+## 5️⃣ Explainable AI & Debug Information
+
+Every analytical result is fully transparent.
+
+The agent exposes:
+
+- Generated SQL
+- LLM reasoning
+- Execution plan
+- Runtime metadata
+
+allowing users to inspect exactly how every answer was produced.
+
+<p align="center">
+  <img src="docs/screenshots/Q 4.2.png" width="100%">
+</p>
+
+---
+
+## 6️⃣ Analytics & Observability Dashboard
+
+The built-in analytics dashboard tracks system performance, execution latency, retry rates, recovery statistics, and historical execution metrics for monitoring agent behavior.
+
+<p align="center">
+  <img src="docs/screenshots/Analystics.png" width="100%">
+</p>
 
 ---
 
