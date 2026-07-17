@@ -138,54 +138,13 @@ Many AI data analysis tools primarily generate SQL or Python using an LLM and re
 
 ---
 
-## 📐 System Architecture
+## 🏗️ System Architecture
 
-### Main Workflow & Capabilities
-```mermaid
-graph TD
-    User([User]) <--> React[React TypeScript Frontend]
-    React <--> FastAPI[FastAPI Backend / Lifespan]
-    
-    subgraph Data & State Persistence
-        Postgres[(PostgreSQL DB)] <--> LangGraph
-        FastAPI <--> SessionMgr[Session Manager]
-        SessionMgr <--> DuckDB[(In-Memory DuckDB Connections)]
-    end
-    
-    subgraph Model Context Protocol Boundary
-        MCPClient[MCP Client] <--> MCPServer[MCP Server Subprocess]
-        MCPServer <--> StatsService[Statistics Service]
-    end
-    
-    subgraph LangGraph Orchestrator
-        LangGraph[LangGraph Compiled Workflow]
-        Supervisor{Supervisor Router}
-        Schema[Schema Profiler Node]
-        Planner[Planner Node]
-        CodeGen[Code Generator Node]
-        SandboxExec[Sandbox Executor Node]
-        Validator[Validator Node]
-        Reflection[Reflection Node]
-        StatsNode[Analysis Engine Node]
-        VisGen[Visualization Gen Node]
-        VisExec[Visualization Exec Node]
-        Report[Report Agent Node]
-        
-        LangGraph --> Supervisor
-        Supervisor -->|Conditional edge| Schema
-        Supervisor -->|Conditional edge| Planner
-        Supervisor -->|Conditional edge| StatsNode
-        Supervisor -->|Conditional edge| VisGen
-        Supervisor -->|Conditional edge| Report
-        
-        Planner --> CodeGen --> SandboxExec --> Validator --> Reflection --> Supervisor
-        VisGen --> VisExec --> Supervisor
-    end
-    
-    FastAPI <--> LangGraph
-    LangGraph <--> MCPClient
-```
+DataAgent Pro follows a **stateful multi-agent architecture** built with **LangGraph**. A central Supervisor coordinates specialized workers for planning, execution, validation, visualization, and reporting, while PostgreSQL preserves workflow state across sessions.
 
+<p align="center">
+  <img src="./screenshots/Architecture.png" alt="System Architecture" width="100%">
+</p>
 ---
 
 ## 🔄 Agent Workflow
@@ -202,35 +161,13 @@ Each request follows a structured execution pipeline:
 
 ---
 
-## 🛠️ Validation, Reflection & Retry Loops
+## 🔁 Validation, Reflection & Retry Loop
 
-When a code execution crashes, returns empty rows, or misses columns, the validator blocks the response and starts a reflection chain.
+Before returning a response, generated SQL and Python code are automatically validated. If validation fails or the results are unreliable, the agent reflects on the failure, regenerates the query using validator feedback, and retries execution. After the maximum retry limit is reached, the system returns a structured failure report instead of an incorrect response.
 
-```mermaid
-sequenceDiagram
-    participant S as Supervisor
-    participant C as Code Generator
-    participant E as Sandbox Executor
-    participant V as Validator
-    participant R as Reflection Agent
-    
-    S->>C: Generate query
-    C->>E: Code script
-    E->>V: Raw preview results
-    Note over V: Programs check for:<br/>Empty values, AST checks, column matches
-    alt Validation Mismatch
-        V->>R: failure_summary (Technical error context)
-        Note over R: Check retry_count < 3
-        alt Count < 3
-            R->>S: Return 'RETRY' routing_hint (SQL / Python)
-            Note over S: Planner & Code Generator consume history<br/>to adjust query logic
-            S->>C: Regenerate corrected query
-        else Count >= 3
-            R->>S: Force graceful_failure = True (REPORT)
-            Note over S: Bypasses LLM, outputs diagnostic failure report
-        end
-    end
-```
+<p align="center">
+  <img src="./screenshots/Validation.png" alt="Validation Reflection Retry Loop" width="100%">
+</p>
 
 ---
 
